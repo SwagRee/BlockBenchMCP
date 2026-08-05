@@ -1,23 +1,22 @@
-# Architecture Prototype
+# Architecture
 
-**Status:** Design locked for scaffold  
+**Status:** Current product path  
 **Companion:** [DECISION.md](./DECISION.md), [SPIKE_COMPARE.md](./SPIKE_COMPARE.md)
 
-## Topology (Pattern A — in-plugin MCP)
+## Topology (in-plugin HTTP MCP)
 
 ```
 AI client (Cursor / Claude)
         │  HTTP MCP  http://127.0.0.1:<port>/mcp
         ▼
 ┌───────────────────────┐
-│  packages/plugin      │  owns Mcp JSON-RPC, tool schemas, handlers
+│  packages/plugin      │  owns MCP JSON-RPC, tool schemas, handlers
 │  (Blockbench desktop) │  undo entries, viewport refresh, scope dialogs
 └───────────────────────┘
 ```
 
 - Plugin is the only process; it binds loopback HTTP via Blockbench `require('net')`.
 - Closing Blockbench stops MCP (accepted trade-off for one-install UX).
-- Legacy Pattern B (`packages/adapter` stdio + WS) is optional: `npm run build:legacy-adapter`.
 
 ## Packages
 
@@ -25,7 +24,6 @@ AI client (Cursor / Claude)
 |---------|------|
 | `packages/shared` | Command registry, Zod params/results, error codes, screenshot/check contracts |
 | `packages/plugin` | Blockbench desktop plugin: HTTP MCP + command handlers |
-| `packages/adapter` | Legacy stdio MCP + WS bridge (not in default build) |
 
 ## Intent-level tool surface (v1)
 
@@ -35,7 +33,7 @@ Prefer **few, high-leverage** tools over thin UI mirrors.
 
 | Tool | Purpose |
 |------|---------|
-| `health` | Adapter up, plugin connected, format, BB version |
+| `health` | Plugin MCP up, format, BB / plugin version |
 | `get_project_summary` | Compact outliner + counts (no image) |
 | `check_model` | Structured findings (see contract below) |
 | `capture_views` | Low-res multi-angle screenshots (default) |
@@ -48,14 +46,18 @@ Prefer **few, high-leverage** tools over thin UI mirrors.
 | `create_project` | `java_block` \| `geckolib_model` only in v1 |
 | `apply_geometry_batch` | Create/update/delete groups+cubes in one undo step; all-or-nothing |
 | `create_limb` | Intent: name, parent, pivot, size, mirror — expands to group+cube(s) |
+| `scaffold_biped` | Steve-like biped bones + cubes + packed UVs |
 | `mirror_elements` | Mirror selection across axis with rename rules |
 
-### Texture / UV (minimal)
+### Texture / UV
 
 | Tool | Purpose |
 |------|---------|
-| `ensure_texture` | Create or reuse texture at size; set resolution |
-| `paint_face_feature` | Face-relative feature paint (eyes, trim) — not raw brush spam |
+| `ensure_texture` | Create or reuse texture at size |
+| `pack_box_uv` | Shelf-pack box UVs so faces do not share pixels |
+| `shade_model_base` | Region colors + soft face lighting |
+| `paint_face_features` | Batch face-local paint (eyes, trim) |
+| `get_texture` | Inspect texture sheet as compact PNG |
 | `auto_uv_cubes` | Box UV / per-face UV for named cubes |
 
 ### GeckoLib / export
@@ -124,25 +126,16 @@ Unknown / ignored parameters → **hard error** (`E_UNKNOWN_PARAM`), not drop-on
 
 | Code | Meaning |
 |------|---------|
-| `E_PLUGIN_DISCONNECTED` | WS down or handshake failed |
 | `E_UNSUPPORTED_FORMAT` | Current project format ≠ tool profile |
 | `E_INVALID_PARAM` | Schema / domain validation failed |
 | `E_UNKNOWN_PARAM` | Extra keys rejected (strict objects) |
 | `E_SCOPE_DENIED` | File op outside scoped directory |
 | `E_PARTIAL_FORBIDDEN` | Batch would partially apply — aborted |
 | `E_NOT_FOUND` | Element / animation missing |
+| `E_BLOCKBENCH_ERROR` | Underlying Blockbench API failure |
 
 ## Security
 
-- Shared secret required for WS handshake (config file under user app data).
+- Bearer secret required on HTTP MCP requests (plugin settings).
 - File read/write only after `propose_scoped_directory` + Blockbench confirmation.
 - Loopback bind only (`127.0.0.1`).
-
-## Implementation order
-
-1. `packages/shared` — protocol types + Zod (scaffold now)
-2. `packages/adapter` — health + echo command over WS
-3. `packages/plugin` — WS server + `health` / `get_project_summary`
-4. `apply_geometry_batch` + `create_limb`
-5. `check_model` + `capture_views`
-6. GeckoLib animation + export + scope

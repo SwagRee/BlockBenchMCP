@@ -15,9 +15,9 @@ export function readPluginConfig(): PluginRuntimeConfig {
       ? portRaw
       : typeof portRaw === "string"
         ? Number(portRaw)
-        : DEFAULTS.wsPort;
+        : DEFAULTS.mcpPort;
   return {
-    port: Number.isFinite(port) ? port : DEFAULTS.wsPort,
+    port: Number.isFinite(port) ? port : DEFAULTS.mcpPort,
     secret:
       typeof secretRaw === "string" && secretRaw.length > 0
         ? secretRaw
@@ -28,7 +28,7 @@ export function readPluginConfig(): PluginRuntimeConfig {
 
 export function registerPluginSettings(): void {
   Settings.add?.("mcp_port", {
-    value: DEFAULTS.wsPort,
+    value: DEFAULTS.mcpPort,
     category: "general",
     name: "MCP Server Port",
     description: "Loopback HTTP port for in-plugin MCP (127.0.0.1).",

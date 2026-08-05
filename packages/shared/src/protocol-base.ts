@@ -1,13 +1,11 @@
 import { z } from "zod";
 
-/** Wire protocol between adapter and Blockbench plugin. */
+/** Protocol version for in-plugin HTTP MCP. */
 export const PROTOCOL_VERSION = 1;
 
 export const DEFAULTS = {
-  wsPort: 39741,
-  requestTimeoutMs: 30_000,
-  handshakeTimeoutMs: 5_000,
-  maxMessageBytes: 8 * 1024 * 1024,
+  /** Loopback HTTP MCP port (plugin hosts `/mcp`). */
+  mcpPort: 39741,
   /** Default longest screenshot edge — keep context cheap. */
   screenshotMaxEdge: 256,
   screenshotMaxEdgeCap: 1024,

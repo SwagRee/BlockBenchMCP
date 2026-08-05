@@ -57,21 +57,6 @@ export {
   getTextureParamsSchema,
 } from "./contracts-texture.js";
 
-export {
-  helloMessageSchema,
-  helloAckSchema,
-  requestMessageSchema,
-  responseMessageSchema,
-  pluginToAdapterSchema,
-  assertProtocolVersion,
-} from "./wire.js";
-export type {
-  HelloMessage,
-  RequestMessage,
-  ResponseMessage,
-  PluginToAdapterMessage,
-} from "./wire.js";
-
 export { resolveGuide } from "./guide-resolve.js";
 export type { GuideTopic } from "./guide-resolve.js";
 export {
@@ -98,5 +83,4 @@ export {
 } from "./capabilities.js";
 export type { CapabilityId } from "./capabilities.js";
 
-export const ADAPTER_VERSION = "0.1.3";
 export const PLUGIN_VERSION = "0.1.3";

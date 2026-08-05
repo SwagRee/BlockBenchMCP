@@ -29,11 +29,9 @@ Do **not** fork [jasonjgardner/blockbench-mcp-plugin](https://github.com/jasonjg
 - Full Blockbench paint-tool parity
 - Hytale / PBR / armature skinning as first-class tools
 
-## Hosting model (updated)
+## Hosting model
 
-**In-process HTTP MCP inside the Blockbench desktop plugin (Pattern A)** is the product path: install plugin → AI client connects via `http://127.0.0.1:<port>/mcp`.
-
-The earlier stdio adapter ↔ WebSocket split (Pattern B) remains under `packages/adapter` as a legacy optional build only.
+**In-process HTTP MCP inside the Blockbench desktop plugin** is the product path: install plugin → AI client connects via `http://127.0.0.1:<port>/mcp`.
 
 Trade-off accepted: MCP is unavailable while Blockbench is closed.
 
@@ -41,8 +39,8 @@ Trade-off accepted: MCP is unavailable while Blockbench is closed.
 
 | Source | Borrow |
 |--------|--------|
-| [adhi-jp/minecraft-blockbench-mcp](https://github.com/adhi-jp/minecraft-blockbench-mcp) | stdio adapter ↔ loopback WS, shared secret, scoped file I/O, typed command registry, tests |
-| [sosadly/blockbench-mcp](https://github.com/sosadly/blockbench-mcp) | bulk geometry, `get_guide`, multi-view compact screenshots, `check_model` |
+| [adhi-jp/minecraft-blockbench-mcp](https://github.com/adhi-jp/minecraft-blockbench-mcp) | Shared-secret auth ideas, scoped file I/O, typed command registry, tests |
+| [sosadly/blockbench-mcp](https://github.com/sosadly/blockbench-mcp) | Bulk geometry, `get_guide`, multi-view compact screenshots, `check_model`, texture shading |
 | jasonjgardner | Negative lessons only (schema bugs, silent no-ops, full-res screenshots) |
 
 ## Success criteria (v1)

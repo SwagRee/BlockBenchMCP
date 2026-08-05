@@ -55,7 +55,6 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 |----|------|
 | `shared` | Zod、指南、工具契约、测试 |
 | `plugin` | 桌面插件；内嵌 HTTP MCP + Host 端口调 BB API |
-| `adapter` | **遗留** stdio 方案（默认不再构建） |
 
 ### 推荐出模流程
 
@@ -116,8 +115,6 @@ Closing Blockbench stops MCP — expected for in-process hosting.
 ```
 AI client  --HTTP MCP-->  packages/plugin (inside Blockbench)
 ```
-
-Legacy stdio adapter remains under `packages/adapter` but is not part of the default build (`npm run build:legacy-adapter`).
 
 ### License
 

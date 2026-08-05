@@ -204,17 +204,10 @@ export const paintFaceFeatureParamsSchema = z
 export const healthResultSchema = z
   .object({
     protocol_version: z.number().int(),
-    adapter_version: z.string(),
-    ws_listening: z.boolean(),
-    plugin_connected: z.boolean(),
-    plugin: z
-      .object({
-        blockbench_version: z.string().optional(),
-        plugin_version: z.string().optional(),
-        format: z.string().nullable().optional(),
-      })
-      .strict()
-      .optional(),
+    plugin_version: z.string(),
+    blockbench_version: z.string(),
+    format: z.string().nullable(),
+    mode: z.literal("in-process"),
   })
   .strict();
 
