@@ -1,0 +1,83 @@
+import {
+  captureViewsDefaults,
+  type CaptureViewsParams,
+  type ViewPreset,
+} from "@blockbench-mcp/shared";
+import { requireProject } from "../bb/elements.js";
+import { getHost } from "../host/live.js";
+
+export async function captureViews(params: CaptureViewsParams = {}): Promise<{
+  views: Array<{
+    view: ViewPreset;
+    width: number;
+    height: number;
+    bytes: number;
+    mime: string;
+    data_url: string;
+  }>;
+}> {
+  requireProject();
+  const host = getHost();
+  const views = (params.views ?? [...captureViewsDefaults.views]) as ViewPreset[];
+  const maxEdge = params.max_edge ?? captureViewsDefaults.max_edge;
+  const format = params.format ?? captureViewsDefaults.format;
+  const quality = (params.quality ?? captureViewsDefaults.quality) / 100;
+  const out: Array<{
+    view: ViewPreset;
+    width: number;
+    height: number;
+    bytes: number;
+    mime: string;
+    data_url: string;
+  }> = [];
+
+  for (const view of views) {
+    const raw = await host.preview.capture(view, maxEdge);
+    const compressed = await compress(raw, format, quality, maxEdge);
+    const mime = compressed.startsWith("data:image/jpeg")
+      ? "image/jpeg"
+      : "image/png";
+    const b64 = compressed.split(",")[1] ?? "";
+    out.push({
+      view,
+      width: maxEdge,
+      height: maxEdge,
+      bytes: Math.floor((b64.length * 3) / 4),
+      mime,
+      data_url: compressed,
+    });
+  }
+  return { views: out };
+}
+
+function compress(
+  dataUrl: string,
+  format: "jpeg" | "png",
+  quality: number,
+  maxEdge: number,
+): Promise<string> {
+  if (format === "png" && dataUrl.startsWith("data:image/png")) {
+    return Promise.resolve(dataUrl);
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = maxEdge;
+      canvas.height = maxEdge;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, maxEdge, maxEdge);
+      resolve(
+        format === "jpeg"
+          ? canvas.toDataURL("image/jpeg", quality)
+          : canvas.toDataURL("image/png"),
+      );
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}

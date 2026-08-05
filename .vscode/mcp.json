@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "blockbench": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/packages/adapter/dist/cli.js"],
+      "env": {
+        "BLOCKBENCH_MCP_SECRET": "dev-local-secret"
+      }
+    }
+  }
+}

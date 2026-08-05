@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  COMMAND_NAMES,
+  COMMAND_SPECS,
+  MIN_BLOCKBENCH_VERSION,
+  isBlockbenchSupported,
+  isCommandName,
+  resolveGuide,
+} from "./index.js";
+
+/** Contract smoke: the agent happy-path tools exist and guides push quality workflow. */
+describe("generation smoke contract", () => {
+  it("exposes the quality pipeline tools in order", () => {
+    const pipeline = [
+      "get_guide",
+      "create_project",
+      "scaffold_biped",
+      "check_model",
+      "ensure_texture",
+      "auto_uv_cubes",
+      "paint_face_feature",
+      "capture_views",
+    ] as const;
+    for (const name of pipeline) {
+      assert.equal(isCommandName(name), true, name);
+      assert.ok(COMMAND_SPECS[name].description.length > 10);
+    }
+    assert.ok(COMMAND_NAMES.includes("apply_geometry_batch"));
+  });
+
+  it("modeling guide mandates scaffold + check before vision", () => {
+    const g = resolveGuide("modeling");
+    assert.match(g.text, /scaffold_biped/i);
+    assert.match(g.text, /check_model/i);
+    assert.match(g.text, /Mandatory workflow/i);
+  });
+
+  it("declares Blockbench 5.1 minimum", () => {
+    assert.equal(MIN_BLOCKBENCH_VERSION, "5.1.0");
+    assert.equal(isBlockbenchSupported("5.1.0"), true);
+    assert.equal(isBlockbenchSupported("5.1.6"), true);
+    assert.equal(isBlockbenchSupported("5.0.9"), false);
+    assert.equal(isBlockbenchSupported("4.12.0"), false);
+  });
+});

@@ -1,0 +1,120 @@
+import type { CheckModelResult } from "@blockbench-mcp/shared";
+import { requireProject } from "../bb/elements.js";
+import { center, cubeAabb, dist, overlaps, volume } from "./aabb.js";
+
+export function runCheckModel(): CheckModelResult {
+  requireProject();
+  const findings: CheckModelResult["findings"] = [];
+
+  for (const g of Group.all) {
+    const childCount = (g.children?.length ?? 0);
+    if (childCount === 0) {
+      findings.push({
+        severity: "error",
+        code: "EMPTY_GROUP",
+        element: g.name,
+        message: `Group "${g.name}" has no children — delete it or add geometry.`,
+      });
+    }
+  }
+
+  const aabbs = Cube.all.map((c) => ({ cube: c, box: cubeAabb(c) }));
+  for (const { cube, box } of aabbs) {
+    if (volume(box) <= 0) {
+      findings.push({
+        severity: "error",
+        code: "ZERO_VOLUME",
+        element: cube.name,
+        message: `Cube "${cube.name}" has zero volume.`,
+      });
+    }
+    const sizes = [
+      box.max[0] - box.min[0],
+      box.max[1] - box.min[1],
+      box.max[2] - box.min[2],
+    ];
+    if (sizes.some((s) => s > 0 && s < 1)) {
+      findings.push({
+        severity: "warn",
+        code: "SLIVER",
+        element: cube.name,
+        message: `Cube "${cube.name}" has a sub-1 unit thickness — often looks noisy.`,
+      });
+    }
+    const untextured = Object.entries(cube.faces ?? {}).filter(
+      ([, f]) => f && (f.texture === null || f.texture === undefined),
+    );
+    if (untextured.length > 0) {
+      findings.push({
+        severity: "warn",
+        code: "UNTEXTURED_FACE",
+        element: cube.name,
+        message: `Cube "${cube.name}" has ${untextured.length} untextured face(s).`,
+      });
+    }
+    // Pivot far from geometry (group origin vs cube center)
+    const parent = cube.parent;
+    if (parent && parent !== "root" && typeof parent !== "string") {
+      const d = dist(center(box), parent.origin as [number, number, number]);
+      const diag = dist(box.min, box.max);
+      if (diag > 0 && d > diag * 2.5) {
+        findings.push({
+          severity: "warn",
+          code: "BAD_PIVOT",
+          element: cube.name,
+          message: `Cube "${cube.name}" is far from parent pivot — animation may look wrong.`,
+        });
+      }
+    }
+  }
+
+  for (let i = 0; i < aabbs.length; i++) {
+    for (let j = i + 1; j < aabbs.length; j++) {
+      const a = aabbs[i];
+      const b = aabbs[j];
+      if (!overlaps(a.box, b.box)) continue;
+      const inter =
+        Math.max(
+          0,
+          Math.min(a.box.max[0], b.box.max[0]) - Math.max(a.box.min[0], b.box.min[0]),
+        ) *
+        Math.max(
+          0,
+          Math.min(a.box.max[1], b.box.max[1]) - Math.max(a.box.min[1], b.box.min[1]),
+        ) *
+        Math.max(
+          0,
+          Math.min(a.box.max[2], b.box.max[2]) - Math.max(a.box.min[2], b.box.min[2]),
+        );
+      const smaller = Math.min(volume(a.box), volume(b.box));
+      if (smaller > 0 && inter / smaller > 0.35) {
+        findings.push({
+          severity: "info",
+          code: "OVERLAP",
+          element: `${a.cube.name}|${b.cube.name}`,
+          message: `Cubes "${a.cube.name}" and "${b.cube.name}" overlap significantly.`,
+        });
+      }
+    }
+  }
+
+  if (Cube.all.length === 0) {
+    findings.push({
+      severity: "error",
+      code: "NO_CUBES",
+      message: "Project has no cubes.",
+    });
+  }
+
+  const errors = findings.filter((f) => f.severity === "error").length;
+  const warns = findings.filter((f) => f.severity === "warn").length;
+  return {
+    findings,
+    summary: {
+      cubes: Cube.all.length,
+      groups: Group.all.length,
+      errors,
+      warns,
+    },
+  };
+}
