@@ -11,14 +11,18 @@
 
 ### 安装（插件）
 
+**成品（推荐）：** 下载仓库 [`release/blockbench_mcp.js`](release/blockbench_mcp.js)，或 [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases) 里的同名文件。
+
+从源码构建：
+
 ```bash
 git clone https://github.com/SwagRee/BlockBenchMCP.git
 cd BlockBenchMCP
-npm install && npm run build
+npm install && npm run release:pack
 ```
 
 1. Blockbench 桌面版：**File → Plugins → Load Plugin from File**  
-   选择 `packages/plugin/dist/blockbench_mcp.js`
+   选择 `release/blockbench_mcp.js`（或构建产物路径）
 2. 首次启动若弹出 **network / net** 权限，选 Always allow
 3. 默认自动监听：`http://127.0.0.1:39741/mcp`  
    也可 **Tools → Start / Stop MCP Server**
@@ -75,13 +79,17 @@ Install the plugin → it hosts loopback HTTP MCP → point Cursor at the URL. *
 
 ### Install
 
+**Artifact (recommended):** download [`release/blockbench_mcp.js`](release/blockbench_mcp.js) or the asset from [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases).
+
+From source:
+
 ```bash
 git clone https://github.com/SwagRee/BlockBenchMCP.git
 cd BlockBenchMCP
-npm install && npm run build
+npm install && npm run release:pack
 ```
 
-1. Blockbench desktop: **File → Plugins → Load Plugin from File** → `packages/plugin/dist/blockbench_mcp.js`
+1. Blockbench desktop: **File → Plugins → Load Plugin from File** → `release/blockbench_mcp.js`
 2. Allow **network / net** permission when prompted
 3. Autostart listens on `http://127.0.0.1:39741/mcp` (or **Tools → Start MCP Server**)
 4. Settings: port + Bearer secret (default `dev-local-secret`)

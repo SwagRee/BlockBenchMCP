@@ -10,6 +10,7 @@
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
     "build": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/plugin",
+    "release:pack": "npm run build && node scripts/pack-release.mjs",
     "build:legacy-adapter": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/adapter",
     "typecheck": "npm run typecheck -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/plugin",
     "test": "npm run test -w @blockbench-mcp/shared"
