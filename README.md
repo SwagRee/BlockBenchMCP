@@ -5,11 +5,11 @@
 
 面向 Minecraft 的 **[Model Context Protocol](https://modelcontextprotocol.io/)**，以 **纯 Blockbench 桌面插件** 形式运行（≥ 5.1.0）。
 
-安装插件 → 插件在本机 `127.0.0.1` 拉起 HTTP MCP → Cursor / 其他客户端用 URL 连接。**不再需要单独的 Node 适配器进程。**
+安装插件 → 插件在本机 `127.0.0.1` 拉起 HTTP MCP → Cursor / 其他客户端用 URL 连接。**不需要单独的 Node 适配器进程。**
 
-意图级工具（`scaffold_biped`、`check_model` 等），不是把 UI 原样甩给模型。
+意图级工具（`scaffold_biped`、`check_model` 等），不是把 UI 原样甩给模型。关 Blockbench = MCP 停用。
 
-### 安装（插件）
+### 安装
 
 **成品（推荐）：** 从 [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases) 下载 `blockbench_mcp.js`。
 
@@ -23,16 +23,12 @@ npm install && npm run build
 
 产物：`packages/plugin/dist/blockbench_mcp.js`。
 
-1. Blockbench 桌面版：**File → Plugins → Load Plugin from File**  
-   选择下载的文件，或上面的构建产物
-2. 首次启动若弹出 **network / net** 权限，选 Always allow
-3. 默认自动监听：`http://127.0.0.1:39741/mcp`  
-   也可 **Tools → Start / Stop MCP Server**
-4. 设置里可改端口 / Bearer 密钥（默认 `dev-local-secret`）
+1. Blockbench：**File → Plugins → Load Plugin from File**（下载文件或构建产物）
+2. 首次若弹出 **network / net** 权限，选 Always allow
+3. 默认监听：`http://127.0.0.1:39741/mcp`（也可 Tools → Start / Stop MCP Server）
+4. 设置可改端口 / Bearer（默认 `dev-local-secret`）
 
 ### 连接 Cursor
-
-在 Cursor MCP 配置里加上（URL + Bearer）：
 
 ```json
 {
@@ -41,9 +37,7 @@ npm install && npm run build
 }
 ```
 
-先开 Blockbench（插件已加载），再在 Cursor 里启用该 MCP，然后调用 `health`。
-
-> 关 Blockbench = MCP 停用（这是纯插件方案的取舍）。
+先开 Blockbench（插件已加载），再启用 MCP，调用 `health`。
 
 ### 架构
 
@@ -55,6 +49,30 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 |----|------|
 | `shared` | Zod、指南、工具契约、测试 |
 | `plugin` | 桌面插件；内嵌 HTTP MCP + Host 端口调 BB API |
+
+安全：仅绑定 `127.0.0.1`；请求需 Bearer；文件导出前须 `propose_scoped_directory` 用户确认。
+
+### 范围（v1）
+
+| 格式 | 优先级 |
+|------|--------|
+| `java_block` | P0 |
+| `geckolib_model`（需 GeckoLib 插件） | P0 |
+| Bedrock entity / geo | P1 |
+| 通用自由建模 / 网格刷子 | 不做 |
+
+**不做：** `trigger_action` / `emulate_clicks` / `risky_eval`、完整画笔 UI、Hytale 等。
+
+### 主要工具
+
+| 类别 | 工具 |
+|------|------|
+| 观察 | `health`、`get_project_summary`、`check_model`、`capture_views`（默认低分辨率）、`get_guide` |
+| 几何 | `create_project`、`scaffold_biped`、`apply_geometry_batch`、`create_limb`、`mirror_elements` |
+| 贴图 | `ensure_texture`、`pack_box_uv`、`shade_model_base`、`paint_face_features`、`get_texture`、`auto_uv_cubes` |
+| 导出 | `propose_scoped_directory`、`export_model`、`upsert_animation` |
+
+突变工具显式返回成功/失败；未知参数硬报错，不静默丢弃。优先 `check_model`，少刷截图。
 
 ### 推荐出模流程
 
@@ -76,7 +94,7 @@ MIT
 
 Minecraft-oriented **[Model Context Protocol](https://modelcontextprotocol.io/)** as a **pure Blockbench desktop plugin** (≥ 5.1.0).
 
-Install the plugin → it hosts loopback HTTP MCP → point Cursor at the URL. **No separate Node adapter process.**
+Install the plugin → it hosts loopback HTTP MCP → point Cursor at the URL. **No separate Node adapter.** Closing Blockbench stops MCP.
 
 ### Install
 
@@ -92,14 +110,12 @@ npm install && npm run build
 
 Output: `packages/plugin/dist/blockbench_mcp.js`.
 
-1. Blockbench desktop: **File → Plugins → Load Plugin from File** → the downloaded file or that build output
-2. Allow **network / net** permission when prompted
-3. Autostart listens on `http://127.0.0.1:39741/mcp` (or **Tools → Start MCP Server**)
-4. Settings: port + Bearer secret (default `dev-local-secret`)
+1. Blockbench: **File → Plugins → Load Plugin from File**
+2. Allow **network / net** when prompted
+3. Listens on `http://127.0.0.1:39741/mcp` (or Tools → Start / Stop MCP Server)
+4. Settings: port + Bearer (default `dev-local-secret`)
 
 ### Cursor
-
-Add this MCP config (URL + Bearer). Open Blockbench first, then enable MCP and call `health`.
 
 ```json
 {
@@ -108,13 +124,51 @@ Add this MCP config (URL + Bearer). Open Blockbench first, then enable MCP and c
 }
 ```
 
-Closing Blockbench stops MCP — expected for in-process hosting.
+Open Blockbench first, enable MCP, call `health`.
 
 ### Architecture
 
 ```
 AI client  --HTTP MCP-->  packages/plugin (inside Blockbench)
 ```
+
+| Package | Role |
+|---------|------|
+| `shared` | Zod, guides, tool contracts, tests |
+| `plugin` | Desktop plugin; in-process HTTP MCP + Host ports |
+
+Security: loopback only; Bearer required; file export needs `propose_scoped_directory` confirmation.
+
+### Scope (v1)
+
+| Format | Priority |
+|--------|----------|
+| `java_block` | P0 |
+| `geckolib_model` (needs GeckoLib plugin) | P0 |
+| Bedrock entity / geo | P1 |
+| Generic free-model / mesh brush | Out of scope |
+
+**Non-goals:** `trigger_action` / `emulate_clicks` / `risky_eval`, full paint UI, Hytale, etc.
+
+### Main tools
+
+| Area | Tools |
+|------|-------|
+| Observe | `health`, `get_project_summary`, `check_model`, `capture_views` (compact by default), `get_guide` |
+| Geometry | `create_project`, `scaffold_biped`, `apply_geometry_batch`, `create_limb`, `mirror_elements` |
+| Texture | `ensure_texture`, `pack_box_uv`, `shade_model_base`, `paint_face_features`, `get_texture`, `auto_uv_cubes` |
+| Export | `propose_scoped_directory`, `export_model`, `upsert_animation` |
+
+Mutations return explicit success/failure; unknown params hard-error. Prefer `check_model` over vision spam.
+
+### Workflow
+
+1. `get_guide(modeling)`
+2. `create_project`
+3. Entities: `scaffold_biped` / blocks: `apply_geometry_batch`
+4. Fix errors, then texture
+5. `pack_box_uv` → `shade_model_base` → `paint_face_features`
+6. `capture_views` only if needed
 
 ### License
 
