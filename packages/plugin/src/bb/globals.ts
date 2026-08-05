@@ -16,7 +16,36 @@ export function bbAnimation():
 
 export function bbBlockbench(): {
   version: string;
+  isApp?: boolean;
   showQuickMessage?: (msg: string, time?: number) => void;
+  showMessageBox?: (
+    options: {
+      title?: string;
+      message: string;
+      buttons?: string[];
+      confirm?: number;
+      cancel?: number;
+    },
+    callback?: (button: number) => void,
+  ) => void;
 } {
-  return (globalThis as unknown as { Blockbench: { version: string; showQuickMessage?: (msg: string, time?: number) => void } }).Blockbench;
+  return (
+    globalThis as unknown as {
+      Blockbench: {
+        version: string;
+        isApp?: boolean;
+        showQuickMessage?: (msg: string, time?: number) => void;
+        showMessageBox?: (
+          options: {
+            title?: string;
+            message: string;
+            buttons?: string[];
+            confirm?: number;
+            cancel?: number;
+          },
+          callback?: (button: number) => void,
+        ) => void;
+      };
+    }
+  ).Blockbench;
 }

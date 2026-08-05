@@ -7467,6 +7467,7 @@ Only this folder will be writable/readable by AI tools.`
   }
 
   // src/main.ts
+  var PROMPT_FLAG = "blockbench_mcp_prompt_start";
   var mcp = null;
   var disposeActions = null;
   var session = createSession();
@@ -7487,6 +7488,44 @@ Only this folder will be writable/readable by AI tools.`
     mcp = null;
     bbBlockbench().showQuickMessage?.("MCP server stopped", 1500);
   }
+  function promptStartAfterInstall() {
+    const bb = bbBlockbench();
+    const message = "Start the local MCP server now?\n\nBlockbench will ask for network permission \u2014 choose Always allow.\nDefault: http://127.0.0.1:39741/mcp";
+    if (typeof bb.showMessageBox === "function") {
+      bb.showMessageBox(
+        {
+          title: "Blockbench MCP",
+          message,
+          buttons: ["Start MCP", "Later"],
+          confirm: 0,
+          cancel: 1
+        },
+        (button) => {
+          if (button === 0) startServer();
+          else {
+            bb.showQuickMessage?.(
+              "MCP not started. Use Tools \u2192 Start MCP Server when ready.",
+              4e3
+            );
+          }
+        }
+      );
+      return;
+    }
+    const ok = typeof window !== "undefined" && window.confirm("Start Blockbench MCP server now? (needs network permission)");
+    if (ok) startServer();
+  }
+  function schedulePostLoadStart(freshInstall) {
+    const config = readPluginConfig();
+    const delayMs = freshInstall ? 400 : 80;
+    setTimeout(() => {
+      if (freshInstall) {
+        promptStartAfterInstall();
+        return;
+      }
+      if (config.autostart) startServer();
+    }, delayMs);
+  }
   bbPlugin().register("blockbench_mcp", {
     title: "Blockbench MCP",
     author: "SwagRee",
@@ -7495,6 +7534,12 @@ Only this folder will be writable/readable by AI tools.`
     version: PLUGIN_VERSION,
     variant: "desktop",
     min_version: MIN_BLOCKBENCH_VERSION,
+    oninstall() {
+      try {
+        localStorage.setItem(PROMPT_FLAG, "1");
+      } catch {
+      }
+    },
     onload() {
       registerPluginSettings();
       disposeActions = registerMcpActions({
@@ -7502,8 +7547,14 @@ Only this folder will be writable/readable by AI tools.`
         start: startServer,
         stop: stopServer
       });
-      const config = readPluginConfig();
-      if (config.autostart) startServer();
+      let freshInstall = false;
+      try {
+        freshInstall = localStorage.getItem(PROMPT_FLAG) === "1";
+        if (freshInstall) localStorage.removeItem(PROMPT_FLAG);
+      } catch {
+        freshInstall = false;
+      }
+      schedulePostLoadStart(freshInstall);
       bbBlockbench().showQuickMessage?.(
         `Blockbench MCP ${PLUGIN_VERSION} (BB\u2265${MIN_BLOCKBENCH_VERSION})`,
         2500

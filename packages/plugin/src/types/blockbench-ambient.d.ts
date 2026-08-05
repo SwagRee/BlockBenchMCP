@@ -3,6 +3,16 @@ declare const Blockbench: {
   version: string;
   isApp?: boolean;
   showQuickMessage?: (msg: string, time?: number) => void;
+  showMessageBox?: (
+    options: {
+      title?: string;
+      message: string;
+      buttons?: string[];
+      confirm?: number;
+      cancel?: number;
+    },
+    callback?: (button: number) => void,
+  ) => void;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
   removeListener?: (event: string, cb: (...args: unknown[]) => void) => void;
 };
@@ -136,6 +146,8 @@ interface PluginData {
   variant?: string;
   onload?: () => void;
   onunload?: () => void;
+  oninstall?: () => void;
+  onuninstall?: () => void;
 }
 
 declare const Settings: {
