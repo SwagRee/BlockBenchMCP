@@ -1,9 +1,0 @@
-#!/bin/sh
-# Reject Cursor/agent co-author trailers so they never land in history.
-msg_file="$1"
-if grep -Eiq '^[[:space:]]*Co-authored-by:[[:space:]].*(Cursor|cursoragent@)' "$msg_file"; then
-  echo "error: commit rejected — Co-authored-by Cursor/cursoragent is not allowed." >&2
-  echo "Remove that trailer and commit again as SwagRee only." >&2
-  exit 1
-fi
-exit 0

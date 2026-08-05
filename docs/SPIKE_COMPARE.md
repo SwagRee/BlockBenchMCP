@@ -1,6 +1,6 @@
 # Spike Compare: jasonjgardner vs adhi vs sosadly
 
-**Method:** Static code + public-issue analysis (same failure modes as a live same-prompt run would hit). Vendor source snapshots under [`research/vendors/`](../research/vendors/). Live Blockbench E2E was not required for this spike; findings are grounded in checked-in tool schemas and known bugs.
+**Method:** Static code + public-issue analysis (same failure modes as a live same-prompt run would hit). Vendor source snapshots were reviewed locally under `research/vendors/` (not published). Live Blockbench E2E was not required for this spike; findings are grounded in tool schemas and known bugs.
 
 **Hypothetical prompt used for scoring:**  
 > “Create a simple GeckoLib wolf: body, head, four legs, tail; texture a 64×64 sheet; add idle + walk animations; iterate from screenshots until proportions look right.”

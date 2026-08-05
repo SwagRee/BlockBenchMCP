@@ -5,4 +5,12 @@ dist/
 *.log
 .env
 .env.*
-research/vendors/**/node_modules/
+
+# Local / editor — keep out of GitHub
+.cursor/
+.githooks/
+.vscode/
+
+# Local pack output & vendor research snapshots
+release/
+research/

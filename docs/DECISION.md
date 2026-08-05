@@ -10,7 +10,7 @@ Do **not** fork [jasonjgardner/blockbench-mcp-plugin](https://github.com/jasonjg
 
 | Option | Decision |
 |--------|----------|
-| Research archive only | Rejected — survey is done; deliverables live under `docs/` + `research/` |
+| Research archive only | Rejected — survey is done; deliverables live under `docs/` (vendor snapshots stay local) |
 | Fork jasonjgardner | Rejected — thin UI wrap, silent failures, screenshot context blowups |
 | Self-build MCP | **Accepted** |
 

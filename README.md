@@ -11,7 +11,7 @@
 
 ### 安装（插件）
 
-**成品（推荐）：** 下载仓库 [`release/blockbench_mcp.js`](release/blockbench_mcp.js)，或 [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases) 里的同名文件。
+**成品（推荐）：** 从 [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases) 下载 `blockbench_mcp.js`。
 
 从源码构建：
 
@@ -21,8 +21,10 @@ cd BlockBenchMCP
 npm install && npm run release:pack
 ```
 
+会在本地生成 `release/blockbench_mcp.js`（该目录不进仓库）。
+
 1. Blockbench 桌面版：**File → Plugins → Load Plugin from File**  
-   选择 `release/blockbench_mcp.js`（或构建产物路径）
+   选择刚下载或本地打包出的 `blockbench_mcp.js`
 2. 首次启动若弹出 **network / net** 权限，选 Always allow
 3. 默认自动监听：`http://127.0.0.1:39741/mcp`  
    也可 **Tools → Start / Stop MCP Server**
@@ -30,7 +32,7 @@ npm install && npm run release:pack
 
 ### 连接 Cursor
 
-项目已带 [`.cursor/mcp.json`](.cursor/mcp.json) / [`.vscode/mcp.json`](.vscode/mcp.json)：
+在 Cursor MCP 配置里加上（URL + Bearer）：
 
 ```json
 {
@@ -79,7 +81,7 @@ Install the plugin → it hosts loopback HTTP MCP → point Cursor at the URL. *
 
 ### Install
 
-**Artifact (recommended):** download [`release/blockbench_mcp.js`](release/blockbench_mcp.js) or the asset from [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases).
+**Artifact (recommended):** download `blockbench_mcp.js` from [GitHub Releases](https://github.com/SwagRee/BlockBenchMCP/releases).
 
 From source:
 
@@ -89,14 +91,23 @@ cd BlockBenchMCP
 npm install && npm run release:pack
 ```
 
-1. Blockbench desktop: **File → Plugins → Load Plugin from File** → `release/blockbench_mcp.js`
+This writes local `release/blockbench_mcp.js` (not tracked in git).
+
+1. Blockbench desktop: **File → Plugins → Load Plugin from File** → the downloaded or locally packed `blockbench_mcp.js`
 2. Allow **network / net** permission when prompted
 3. Autostart listens on `http://127.0.0.1:39741/mcp` (or **Tools → Start MCP Server**)
 4. Settings: port + Bearer secret (default `dev-local-secret`)
 
 ### Cursor
 
-Use [`.cursor/mcp.json`](.cursor/mcp.json) (URL + Bearer). Open Blockbench first, then enable MCP and call `health`.
+Add this MCP config (URL + Bearer). Open Blockbench first, then enable MCP and call `health`.
+
+```json
+{
+  "url": "http://127.0.0.1:39741/mcp",
+  "headers": { "Authorization": "Bearer dev-local-secret" }
+}
+```
 
 Closing Blockbench stops MCP — expected for in-process hosting.
 
