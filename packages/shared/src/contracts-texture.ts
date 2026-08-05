@@ -8,6 +8,11 @@ export const packBoxUvParamsSchema = z
     padding: z.number().int().nonnegative().max(8).optional(),
     /** Grow Project.texture_* and bitmap if packed extent overflows. */
     auto_resize: z.boolean().optional(),
+    /**
+     * UV strategy. Default `auto` reads Project/Format/cubes
+     * (`java_block` → per-face, Bedrock-style → box).
+     */
+    mode: z.enum(["box", "face", "auto"]).optional(),
   })
   .strict();
 

@@ -1,6 +1,7 @@
 import { findElement, refreshView, requireProject } from "../bb/elements.js";
 import { getHost } from "../host/live.js";
 import { CommandError } from "../errors.js";
+import { resolveUvMode } from "../paint/uv-mode.js";
 
 export function mirrorElements(opts: {
   names: string[];
@@ -19,6 +20,7 @@ export function mirrorElements(opts: {
     return el;
   });
   const host = getHost();
+  const boxUv = resolveUvMode() === "box";
 
   return host.undo.run({ outliner: true, elements: [] }, label, (track) => {
     const created: { uuid: string; name: string; type: string }[] = [];
@@ -46,7 +48,7 @@ export function mirrorElements(opts: {
           to: hi,
           origin,
           autouv: 1,
-          box_uv: true,
+          box_uv: boxUv,
         })
           .init()
           .addTo(parent);

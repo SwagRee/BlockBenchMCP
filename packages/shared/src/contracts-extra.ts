@@ -13,7 +13,8 @@ export const ensureTextureParamsSchema = z
 export const autoUvCubesParamsSchema = z
   .object({
     cubes: z.array(z.string().min(1)).optional(),
-    mode: z.enum(["box", "face"]).optional(),
+    /** Default `auto` = detect from Project/Format (java_block → face). */
+    mode: z.enum(["box", "face", "auto"]).optional(),
   })
   .strict();
 

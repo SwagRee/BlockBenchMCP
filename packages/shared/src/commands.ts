@@ -91,13 +91,14 @@ export const COMMAND_SPECS = {
     params: ensureTextureParamsSchema,
   },
   auto_uv_cubes: {
-    description: "Box-UV (or face) map named cubes / all cubes. Prefer pack_box_uv for unique islands.",
+    description:
+      "Auto-UV cubes. mode auto|box|face (default auto from Project/Format: java_block→face, Bedrock→box). Prefer pack_box_uv for unique islands.",
     mutates: true,
     params: autoUvCubesParamsSchema,
   },
   pack_box_uv: {
     description:
-      "Shelf-pack box UVs so cubes do not share pixels. Call BEFORE shade_model_base / paint. auto_resize grows atlas if needed.",
+      "Pack unique UV islands before shade/paint. Auto-detects box vs per-face (java_block→face). Optional mode box|face|auto; auto_resize grows atlas.",
     mutates: true,
     params: packBoxUvParamsSchema,
   },

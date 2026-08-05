@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/protocol.test.js dist/smoke-contract.test.js"
+    "test": "npm run build && node --test dist/protocol.test.js dist/smoke-contract.test.js dist/uv-mode.test.js"
   },
   "dependencies": {
     "zod": "^3.24.2"

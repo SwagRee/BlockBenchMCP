@@ -1,24 +1,21 @@
 import { requireCube, requireProject, refreshView } from "../bb/elements.js";
 import { getHost } from "../host/live.js";
 import { CommandError } from "../errors.js";
-
-function boxUVFootprint(cube: Cube): { w: number; h: number } {
-  const w = Math.max(1, Math.ceil(Math.abs(cube.to[0] - cube.from[0])));
-  const h = Math.max(1, Math.ceil(Math.abs(cube.to[1] - cube.from[1])));
-  const d = Math.max(1, Math.ceil(Math.abs(cube.to[2] - cube.from[2])));
-  return { w: 2 * (w + d), h: h + d };
-}
+import { applyPackedUvs, resolveUvMode, type UvMode } from "./uv-mode.js";
 
 /**
- * Shelf-pack box UVs so cubes do not share the same pixels (sosadly-style).
+ * Pack UV islands so cubes/faces do not share pixels.
+ * Auto-detects box vs per-face from Project/Format/cubes (java_block → face).
  */
 export function packBoxUv(opts: {
   cubes?: string[];
   padding?: number;
   auto_resize?: boolean;
+  mode?: UvMode | "auto";
 }): {
   ok: true;
   undo_label: string;
+  mode: UvMode;
   packed: number;
   used: [number, number];
   texture_size: [number, number];
@@ -32,43 +29,25 @@ export function packBoxUv(opts: {
     throw new CommandError("E_NOT_FOUND", "No cubes to pack UV.");
   }
 
+  const mode = resolveUvMode({
+    explicit: opts.mode ?? "auto",
+    cubes: list,
+  });
   const pad = opts.padding ?? 1;
-  const Project = (globalThis as unknown as {
-    Project?: { texture_width?: number; texture_height?: number };
-  }).Project;
   let texW = Project?.texture_width ?? 64;
   let texH = Project?.texture_height ?? 64;
-
   const host = getHost();
-  return host.undo.run({ elements: list, uv_only: true }, "pack_box_uv", () => {
-    const items = list
-      .map((c) => ({ c, f: boxUVFootprint(c) }))
-      .sort((a, b) => b.f.h - a.f.h);
 
-    let x = 0;
-    let y = 0;
-    let rowH = 0;
-    let maxX = 0;
-    for (const it of items) {
-      if (x + it.f.w + pad > texW && x > 0) {
-        x = 0;
-        y += rowH + pad;
-        rowH = 0;
-      }
-      it.c.box_uv = true;
-      it.c.uv_offset = [x, y];
-      it.c.autouv = 0;
-      it.c.mapAutoUV?.();
-      x += it.f.w + pad;
-      rowH = Math.max(rowH, it.f.h);
-      maxX = Math.max(maxX, x);
-    }
-    const usedH = y + rowH;
-    const used: [number, number] = [maxX, usedH];
+  return host.undo.run({ elements: list, uv_only: true }, "pack_box_uv", () => {
+    const { used, packed } = applyPackedUvs(list, {
+      mode,
+      texW,
+      padding: pad,
+    });
 
     if (opts.auto_resize !== false) {
-      const needW = Math.max(texW, maxX);
-      const needH = Math.max(texH, usedH);
+      const needW = Math.max(texW, used[0]);
+      const needH = Math.max(texH, used[1]);
       if (needW !== texW || needH !== texH) {
         texW = needW;
         texH = needH;
@@ -77,7 +56,6 @@ export function packBoxUv(opts: {
           Project.texture_height = texH;
         }
         const tex = host.textures.defaultOrFirst();
-        // Remap existing bitmap into a larger canvas via edit when possible.
         tex?.edit((ctx, canvas) => {
           if (canvas.width >= texW && canvas.height >= texH) return;
           const prev = document.createElement("canvas");
@@ -93,11 +71,15 @@ export function packBoxUv(opts: {
       }
     }
 
+    const tex = host.textures.defaultOrFirst();
+    for (const c of list) tex?.applyToCube(c.uuid, true);
+
     refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
     return {
       ok: true as const,
       undo_label: "pack_box_uv",
-      packed: items.length,
+      mode,
+      packed,
       used,
       texture_size: [texW, texH],
     };

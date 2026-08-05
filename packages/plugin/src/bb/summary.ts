@@ -1,6 +1,7 @@
 import { requireProject, currentFormatId } from "./elements.js";
 import { bbAnimation } from "./globals.js";
 import type { ProjectSummary } from "@blockbench-mcp/shared";
+import { resolveUvMode } from "../paint/uv-mode.js";
 
 export function buildProjectSummary(): ProjectSummary {
   requireProject();
@@ -36,6 +37,7 @@ export function buildProjectSummary(): ProjectSummary {
   return {
     format: currentFormatId() ?? "unknown",
     name: Project?.name,
+    uv_mode: resolveUvMode({ cubes: [...Cube.all] }),
     cubes: Cube.all.length,
     groups: Group.all.length,
     textures: Texture.all.length,

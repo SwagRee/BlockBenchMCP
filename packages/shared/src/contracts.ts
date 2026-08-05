@@ -12,6 +12,8 @@ export const projectSummarySchema = z
   .object({
     format: z.string(),
     name: z.string().optional(),
+    /** Resolved UV strategy for this project (box vs per-face). */
+    uv_mode: z.enum(["box", "face"]).optional(),
     cubes: z.number().int().nonnegative(),
     groups: z.number().int().nonnegative(),
     textures: z.number().int().nonnegative(),
@@ -207,6 +209,7 @@ export const healthResultSchema = z
     plugin_version: z.string(),
     blockbench_version: z.string(),
     format: z.string().nullable(),
+    uv_mode: z.enum(["box", "face"]).optional(),
     mode: z.literal("in-process"),
   })
   .strict();

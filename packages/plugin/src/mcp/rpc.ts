@@ -15,6 +15,7 @@ import { dispatchCommand } from "../dispatch.js";
 import { toErrorPayload } from "../errors.js";
 import { bbBlockbench } from "../bb/globals.js";
 import { currentFormatId } from "../bb/elements.js";
+import { resolveUvMode } from "../paint/uv-mode.js";
 
 type Content = Array<
   | { type: "text"; text: string }
@@ -113,6 +114,7 @@ async function callTool(
       plugin_version: PLUGIN_VERSION,
       blockbench_version: bbBlockbench().version ?? "unknown",
       format: currentFormatId() ?? null,
+      uv_mode: resolveUvMode({ cubes: [...Cube.all] }),
       mode: "in-process",
     });
   }

@@ -1,6 +1,7 @@
 import type { Vec3 } from "@blockbench-mcp/shared";
 import { parentOf, refreshView, requireProject } from "../bb/elements.js";
 import { getHost } from "../host/live.js";
+import { resolveUvMode } from "../paint/uv-mode.js";
 
 export interface LimbResult {
   created: { uuid: string; name: string; type: string }[];
@@ -46,6 +47,7 @@ function addLimbSide(
     to: box.to,
     origin: [...pivot],
     autouv: 1,
+    box_uv: resolveUvMode() === "box",
   })
     .init()
     .addTo(group);

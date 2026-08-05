@@ -6,8 +6,14 @@ export const GUIDE_MODELING = `
 1. get_guide(modeling) then create_project(format).
 2. Entities: scaffold_biped FIRST (correct pivots). Blocks: apply_geometry_batch.
 3. check_model immediately. Fix every error before texturing.
-4. Texturing: pack_box_uv → shade_model_base → paint_face_features. (scaffold_biped already packs.)
+4. Texturing: pack_box_uv → shade_model_base → paint_face_features. (scaffold_biped already packs in the project UV mode.)
 5. capture_views only after check_model is clean (max_edge 256).
+
+## UV mode (do not mix blindly)
+- Read uv_mode from health / get_project_summary first.
+- java_block → per-face (face). Bedrock / skin / geckolib-style → box.
+- Geometry tools + pack_box_uv / auto_uv_cubes follow Project/Format; override only with mode box|face.
+- Never force box UV on a java_block project (and vice versa) unless you mean to.
 
 ## Proportions
 - Even integer sizes (2/4/6/8). Silhouette first; 8–20 cubes beats 80.
@@ -25,11 +31,11 @@ export const GUIDE_MODELING = `
 export const GUIDE_TEXTURING = `
 # Texturing
 
-1. ensure_texture (64 entities / 16 blocks). Prefer pack_box_uv so faces do not share pixels.
+1. ensure_texture (64 entities / 16 blocks). Call pack_box_uv so islands do not share pixels (auto box vs face).
 2. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
 3. paint_face_features for eyes/mouth/trim (batch ops, face-local 0,0 = face UV top-left).
 4. get_texture to inspect the sheet; fix gaps; re-check_model for UNTEXTURED_FACE.
-5. Palette 4–8 colors. Avoid painting before pack_box_uv.
+5. Palette 4–8 colors. Avoid painting before pack_box_uv. Respect uv_mode from the project.
 `.trim();
 
 export const GUIDE_ANIMATION = `
@@ -43,7 +49,8 @@ export const GUIDE_ANIMATION = `
 export const GUIDE_JAVA_BLOCK = `
 # java_block
 
-- Prefer geometry inside 0..16. One 16×16 texture.
+- Per-face UV (uv_mode=face). Geometry + pack_box_uv use face packing, not box UV.
+- Prefer geometry inside 0..16. One 16×16 (or packed) texture.
 - apply_geometry_batch for multi-cube shapes in one undo.
 - check_model before export.
 `.trim();
@@ -52,6 +59,7 @@ export const GUIDE_GECKOLIB = `
 # geckolib_model
 
 - Requires GeckoLib plugin (capability geckolib).
+- Typically box UV; scaffold_biped / pack_box_uv follow project mode.
 - Start scaffold_biped; stable snake_case bone names.
 - propose_scoped_directory before export_model.
 `.trim();

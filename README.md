@@ -80,8 +80,10 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 2. `create_project`
 3. 实体：`scaffold_biped`／方块：`apply_geometry_batch`
 4. 修完 error 再贴图
-5. `pack_box_uv` → `shade_model_base` → `paint_face_features`
+5. `pack_box_uv` → `shade_model_base` → `paint_face_features`（`pack_box_uv` / 建几何会按项目 `uv_mode` 自动选箱型或逐面）
 6. 需要时再 `capture_views`
+
+先看 `health` / `get_project_summary` 的 `uv_mode`：`java_block` 为逐面（face），Bedrock 类多为箱型（box）。
 
 ### 许可证
 
@@ -167,8 +169,10 @@ Mutations return explicit success/failure; unknown params hard-error. Prefer `ch
 2. `create_project`
 3. Entities: `scaffold_biped` / blocks: `apply_geometry_batch`
 4. Fix errors, then texture
-5. `pack_box_uv` → `shade_model_base` → `paint_face_features`
+5. `pack_box_uv` → `shade_model_base` → `paint_face_features` (`pack_box_uv` / geometry follow project `uv_mode`: box vs per-face)
 6. `capture_views` only if needed
+
+Check `uv_mode` on `health` / `get_project_summary`: `java_block` → face; Bedrock-style → box.
 
 ### License
 

@@ -40,6 +40,11 @@ describe("generation smoke contract", () => {
     assert.match(g.text, /paint_face_features/i);
   });
 
+  it("guides explain java_block per-face vs box UV", () => {
+    assert.match(resolveGuide("modeling").text, /uv_mode/i);
+    assert.match(resolveGuide("java_block").text, /per-face|face/i);
+  });
+
   it("modeling guide mandates scaffold + check before vision", () => {
     const g = resolveGuide("modeling");
     assert.match(g.text, /scaffold_biped/i);

@@ -2,6 +2,7 @@ import type { Vec3 } from "@blockbench-mcp/shared";
 import { findElement, refreshView, requireProject } from "../bb/elements.js";
 import { getHost } from "../host/live.js";
 import { CommandError } from "../errors.js";
+import { resolveUvMode } from "../paint/uv-mode.js";
 
 export function applyGeometryBatch(opts: {
   create_groups?: Array<{
@@ -59,6 +60,7 @@ export function applyGeometryBatch(opts: {
   }
 
   const host = getHost();
+  const boxUv = resolveUvMode() === "box";
   return host.undo.run({ outliner: true, elements: [] }, label, (track) => {
     const created: { uuid: string; name: string; type: string }[] = [];
     const deleted: string[] = [];
@@ -101,7 +103,7 @@ export function applyGeometryBatch(opts: {
         rotation: spec.rotation ? [...spec.rotation] : [0, 0, 0],
         inflate: spec.inflate ?? 0,
         autouv: 1,
-        box_uv: true,
+        box_uv: boxUv,
       })
         .init()
         .addTo(parent as Group | "root");
