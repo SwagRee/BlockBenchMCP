@@ -1,219 +1,160 @@
 # BlockBenchMCP
 
-**English** | [中文](README.zh-CN.md)
-
-Minecraft-oriented **[Model Context Protocol](https://modelcontextprotocol.io/)** bridge for [Blockbench](https://www.blockbench.net/) (desktop **≥ 5.1.0**).
-
-An AI client (Cursor / Claude / etc.) talks to a **stdio MCP adapter**; the adapter talks to a **Blockbench plugin** over loopback WebSocket. The plugin is the only process that mutates the model.
-
-> Not a fork of kitchen-sink UI remotes. Tools are **intent-level** so agents can produce better low-poly Minecraft models with fewer, safer calls.
+<p align="center">
+  <a href="#english"><b>English</b></a>
+  ·
+  <a href="#chinese"><b>中文</b></a>
+</p>
 
 ---
 
-## Why this exists
+<a id="english"></a>
 
-Common Blockbench MCP plugins expose raw UI actions (`place_cube`, `trigger_action`, full-res screenshots). That causes:
+## English
 
-- dozens–hundreds of tool calls for one character
-- silent schema / keyframe failures
-- context blown up by screenshots
-- MCP dying when Blockbench closes
+Minecraft-oriented **[Model Context Protocol](https://modelcontextprotocol.io/)** bridge for [Blockbench](https://www.blockbench.net/) desktop **≥ 5.1.0**.
 
-This project instead:
+AI client → **stdio MCP adapter** → loopback WebSocket → **Blockbench plugin** (only the plugin mutates the model).
 
-| Choice | Detail |
-|--------|--------|
-| Transport | Pattern B: stdio adapter stays alive; plugin connects via `ws://127.0.0.1` |
-| Tools | Intent APIs: `scaffold_biped`, `create_limb`, `apply_geometry_batch`, `check_model` |
-| Feedback | Structured `check_model` first; screenshots default **256px JPEG** |
-| Host ports | Plugin domain code goes through `undo` / `textures` / `canvas` / `formats` / `preview` |
-| Formats (v1) | `java_block`, `geckolib_model` (GeckoLib plugin required for entities) |
+Intent tools (`scaffold_biped`, `check_model`, …) — not a kitchen-sink UI remote.
 
-Survey notes: [docs/SPIKE_COMPARE.md](docs/SPIKE_COMPARE.md) · decisions: [docs/DECISION.md](docs/DECISION.md) · architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+### Why this exists
 
----
+Typical BB MCPs expose raw UI ops → too many tool calls, silent failures, huge screenshots, MCP dies when BB closes.
 
-## Architecture
+This repo: stdio adapter stays up; bulk/intent tools; structured checks before vision; BbHost ports (`undo` / `textures` / `canvas` / `formats` / `preview`); formats `java_block` + `geckolib_model`.
+
+More: [docs/SPIKE_COMPARE.md](docs/SPIKE_COMPARE.md) · [docs/DECISION.md](docs/DECISION.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+### Architecture
 
 ```
-AI client (Cursor / Claude)
-        │  stdio MCP
-        ▼
-┌──────────────────────────┐
-│  packages/adapter        │  McpServer, health, get_guide (local)
-│  Node process            │  WS listener + shared secret
-└────────────┬─────────────┘
-             │  ws://127.0.0.1:39741
-             ▼
-┌──────────────────────────┐
-│  packages/plugin         │  Command handlers + BbHost ports
-│  Blockbench desktop      │  Undo / Texture / Canvas (BB 5.1 APIs)
-└──────────────────────────┘
+AI client  --stdio MCP-->  packages/adapter  --ws://127.0.0.1:39741-->  packages/plugin (Blockbench)
 ```
 
 | Package | Role |
 |---------|------|
-| [`packages/shared`](packages/shared) | Protocol, Zod contracts, guides, capabilities, tests |
-| [`packages/adapter`](packages/adapter) | stdio MCP server + WebSocket bridge |
-| [`packages/plugin`](packages/plugin) | Blockbench desktop plugin (esbuild → `dist/blockbench_mcp.js`) |
+| `packages/shared` | Protocol, Zod, guides, capabilities, tests |
+| `packages/adapter` | stdio MCP + WS listener (`get_guide` is local) |
+| `packages/plugin` | Desktop plugin; BB 5.1 Undo/Texture/Canvas via host ports |
 
-Source files are kept **≤ 500 lines** (enforced by test). Plugin host ports: [`packages/plugin/src/host/`](packages/plugin/src/host/).
+Each source file ≤ 500 lines (test guard).
 
----
+### Requirements
 
-## Requirements
+- Node.js ≥ 22 · Blockbench desktop ≥ 5.1.0 · GeckoLib plugin for animated entities · MCP client (Cursor / Claude / …)
 
-- **Node.js ≥ 22**
-- **Blockbench desktop ≥ 5.1.0** (plugin sets `min_version`)
-- For animated entities: [GeckoLib Blockbench plugin](https://github.com/bernie-g/geckolib)
-- MCP-capable client (Cursor, Claude Code/Desktop, …)
-
----
-
-## Install & build
+### Install
 
 ```bash
 git clone https://github.com/SwagRee/BlockBenchMCP.git
 cd BlockBenchMCP
-npm install
-npm run build
-npm test
+npm install && npm run build && npm test
 ```
-
-Artifacts:
 
 - Adapter: `packages/adapter/dist/cli.js`
 - Plugin: `packages/plugin/dist/blockbench_mcp.js`
 
----
-
-## Setup
-
-### 1. Start / register the adapter
-
-Default secret: `dev-local-secret` · default port: `39741`
+### Setup
 
 ```bash
-node packages/adapter/dist/cli.js
-# optional: --port 39741 --secret your-secret
-# env: BLOCKBENCH_MCP_SECRET, BLOCKBENCH_MCP_PORT
+node packages/adapter/dist/cli.js   # secret: dev-local-secret  port: 39741
 ```
 
-**Cursor** — [`.vscode/mcp.json`](.vscode/mcp.json) (adjust absolute path if needed):
+Cursor: [`.vscode/mcp.json`](.vscode/mcp.json). In Blockbench: load the plugin file, match port/secret, call `health`.
 
-```json
-{
-  "servers": {
-    "blockbench": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["${workspaceFolder}/packages/adapter/dist/cli.js"],
-      "env": {
-        "BLOCKBENCH_MCP_SECRET": "dev-local-secret"
-      }
-    }
-  }
-}
-```
+### Quality workflow
 
-**Claude Code** example:
+1. `get_guide` → `modeling`
+2. `create_project`
+3. **Entities:** `scaffold_biped` · **Blocks:** `apply_geometry_batch`
+4. Fix `check_model` errors
+5. `auto_uv_cubes` → `paint_face_feature`
+6. `capture_views` only if needed (256px JPEG)
 
-```bash
-claude mcp add blockbench -e BLOCKBENCH_MCP_SECRET=dev-local-secret -- node /absolute/path/to/BlockBenchMCP/packages/adapter/dist/cli.js
-```
+### Tools (v1)
 
-### 2. Load the plugin in Blockbench
+`health` · `get_guide` · `get_project_summary` · `check_model` · `capture_views` · `create_project` · `scaffold_biped` · `create_limb` · `apply_geometry_batch` · `mirror_elements` · `ensure_texture` · `auto_uv_cubes` · `paint_face_feature` · `upsert_animation` · `propose_scoped_directory` · `export_model`
 
-1. Desktop Blockbench → **File → Plugins → Load Plugin from File**
-2. Select `packages/plugin/dist/blockbench_mcp.js`
-3. **Settings → General**: MCP Adapter Port `39741`, MCP Shared Secret must match the adapter
-4. Call tool `health` → expect `plugin_connected: true`, `blockbench_supported: true`
+Out of scope: `trigger_action` / `emulate_clicks` / `risky_eval`.
 
-Handshake also sends `capabilities` (geometry, textures, screenshots, geckolib, …).
+### Security
 
----
+Loopback only · shared secret · scoped export after user confirm.
 
-## Recommended agent workflow (quality)
-
-Do **not** skip steps 1–3.
-
-1. `get_guide` → topic `modeling` (then `geckolib` or `java_block`)
-2. `create_project` with the right format
-3. **Entities:** `scaffold_biped` (Steve-like bones + pivots + texture; result includes embedded `check`)  
-   **Blocks:** `apply_geometry_batch`
-4. Read `check_model` / embedded check — fix every **error** before painting
-5. `auto_uv_cubes` → `paint_face_feature` (eyes, trim — face-local UVs)
-6. `capture_views` only if you still need vision (default max edge **256**, JPEG)
-7. Optional: `upsert_animation`, `propose_scoped_directory` → `export_model`
-
----
-
-## MCP tools (v1)
-
-### Session / observation
-
-| Tool | Purpose |
-|------|---------|
-| `health` | Adapter up, plugin connected, versions, capabilities |
-| `get_guide` | Playbooks (served by adapter; Blockbench not required) |
-| `get_project_summary` | Compact outliner + counts (prefer over screenshots) |
-| `check_model` | OVERLAP / EMPTY_GROUP / ZERO_VOLUME / BAD_PIVOT / UNTEXTURED_FACE / … |
-| `capture_views` | Low-res multi-angle preview images |
-
-### Geometry / texture
-
-| Tool | Purpose |
-|------|---------|
-| `create_project` | `java_block` \| `geckolib_model` |
-| `scaffold_biped` | Best start for humanoids — correct joint pivots |
-| `create_limb` | Bone + cube at joint; optional X mirror |
-| `apply_geometry_batch` | Create/delete groups+cubes in **one** undo (all-or-nothing) |
-| `mirror_elements` | Mirror + smart left/right rename |
-| `ensure_texture` | Create/reuse solid texture (BB `fromDataURL`) |
-| `auto_uv_cubes` | Box / face auto UV |
-| `paint_face_feature` | Rect / ellipse / fill in **face-local** UV space |
-
-### Animation / files
-
-| Tool | Purpose |
-|------|---------|
-| `upsert_animation` | Simple bone clip create/replace (format-dependent) |
-| `propose_scoped_directory` | User confirms session file root |
-| `export_model` | Write under scoped directory (`overwrite` must be explicit) |
-
-**Explicitly out of scope (v1):** `trigger_action`, `emulate_clicks`, `risky_eval`, full paint chrome, mesh sculpt suite, Hytale/PBR-first tools.
-
----
-
-## Design rules that improve output
-
-1. **Pivots at joints** — `scaffold_biped` / `create_limb` hang limbs from hip/shoulder, not cube centers  
-2. **Fail loud** — Zod `.strict()`; unknown params rejected; batch aborts instead of half-applying  
-3. **Undo correctness (BB 5.1)** — `cancelEdit(true)` on failure; `finishEdit` includes created elements  
-4. **Cheap feedback** — `check_model` / summary before any screenshot  
-5. **Single responsibility files** — host ports isolate Blockbench globals from command logic  
-
----
-
-## Scripts
-
-| Script | Action |
-|--------|--------|
-| `npm run build` | Build shared → adapter → plugin |
-| `npm test` | Protocol + smoke contracts + ≤500-line guard |
-| `npm run typecheck` | Typecheck all workspaces |
-| `npm start` | Run adapter CLI |
-
----
-
-## Security notes
-
-- WebSocket binds **127.0.0.1** only  
-- Shared secret required (default `dev-local-secret` is for local dev — change for anything shared)  
-- File export only after user-approved `propose_scoped_directory`  
-
----
-
-## License
+### License
 
 MIT
+
+<p align="right"><a href="#chinese">→ 中文</a></p>
+
+---
+
+<a id="chinese"></a>
+
+## 中文
+
+面向 Minecraft 的 **[Model Context Protocol](https://modelcontextprotocol.io/)** 桥接，对接 [Blockbench](https://www.blockbench.net/) 桌面版 **≥ 5.1.0**。
+
+AI 客户端 → **stdio MCP 适配器** → 本机 WebSocket → **Blockbench 插件**（只有插件会改模型）。
+
+意图级工具（`scaffold_biped`、`check_model` 等），不是把 UI 原样甩给模型。
+
+### 要解决什么问题
+
+常见 BB MCP：工具过碎、静默失败、截图炸上下文、关编辑器 MCP 就挂。
+
+本仓库：适配器常驻；意图/批量工具；先 `check_model` 再截图；Host 端口隔离 BB API；P0 格式 `java_block` / `geckolib_model`。
+
+详见：[docs/SPIKE_COMPARE.md](docs/SPIKE_COMPARE.md) · [docs/DECISION.md](docs/DECISION.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+### 当前仓库怎么组织
+
+```
+AI 客户端  --stdio-->  packages/adapter  --ws://127.0.0.1:39741-->  packages/plugin
+```
+
+| 包 | 职责 |
+|----|------|
+| `shared` | 协议、Zod、指南、能力、测试 |
+| `adapter` | stdio MCP + WS（`get_guide` 本地返回） |
+| `plugin` | 桌面插件；经 `undo`/`textures`/`canvas`/`formats`/`preview` 调 BB 5.1 API |
+
+单文件 ≤ 500 行。构建产物：`adapter/dist/cli.js`、`plugin/dist/blockbench_mcp.js`。
+
+调研摘录在 `research/vendors/`（只读）。
+
+### 环境
+
+Node ≥ 22 · Blockbench 桌面 ≥ 5.1.0 · 实体动画需 GeckoLib 插件 · MCP 客户端
+
+### 安装
+
+```bash
+git clone https://github.com/SwagRee/BlockBenchMCP.git
+cd BlockBenchMCP
+npm install && npm run build && npm test
+node packages/adapter/dist/cli.js
+```
+
+默认密钥 `dev-local-secret`、端口 `39741`。Blockbench 加载插件并与密钥一致后调用 `health`。
+
+### 推荐出模流程
+
+1. `get_guide(modeling)`
+2. `create_project`
+3. 实体：`scaffold_biped`（返回里带 `check`）／方块：`apply_geometry_batch`
+4. 修完 error 再贴图
+5. `auto_uv_cubes` → `paint_face_feature`
+6. 需要时再 `capture_views`
+
+### 完成度（诚实）
+
+已具备：通路、意图工具、Host 端口、能力握手、契约测试、`scaffold_biped`。  
+仍弱：GeckoLib 关键帧深度、codec 级导出、真机 E2E。
+
+### 许可证
+
+MIT
+
+<p align="right"><a href="#english">→ English</a></p>
