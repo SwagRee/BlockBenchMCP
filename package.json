@@ -2,17 +2,17 @@
   "name": "blockbench-mcp",
   "private": true,
   "version": "0.1.0",
-  "description": "Minecraft-oriented BlockBench MCP (stdio adapter + desktop plugin)",
+  "description": "Minecraft-oriented BlockBench MCP — pure desktop plugin (in-process HTTP MCP)",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
-    "build": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/adapter && npm run build -w @blockbench-mcp/plugin",
-    "typecheck": "npm run typecheck -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/adapter && npm run typecheck -w @blockbench-mcp/plugin",
-    "test": "npm run test -w @blockbench-mcp/shared",
-    "start": "npm run start -w @blockbench-mcp/adapter"
+    "build": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/plugin",
+    "build:legacy-adapter": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/adapter",
+    "typecheck": "npm run typecheck -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/plugin",
+    "test": "npm run test -w @blockbench-mcp/shared"
   },
   "engines": {
     "node": ">=22"

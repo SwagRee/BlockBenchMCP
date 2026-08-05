@@ -3,37 +3,29 @@
 **Status:** Design locked for scaffold  
 **Companion:** [DECISION.md](./DECISION.md), [SPIKE_COMPARE.md](./SPIKE_COMPARE.md)
 
-## Topology (Pattern B)
+## Topology (Pattern A — in-plugin MCP)
 
 ```
 AI client (Cursor / Claude)
-        │  stdio MCP
+        │  HTTP MCP  http://127.0.0.1:<port>/mcp
         ▼
 ┌───────────────────────┐
-│  packages/adapter     │  owns McpServer, tool schemas, health
-│  (Node process)       │
-└───────────┬───────────┘
-            │  loopback WebSocket + shared secret
-            │  ws://127.0.0.1:<port>
-            ▼
-┌───────────────────────┐
-│  packages/plugin      │  executes commands on Blockbench APIs
-│  (desktop plugin)     │  undo entries, viewport refresh, scope dialogs
+│  packages/plugin      │  owns Mcp JSON-RPC, tool schemas, handlers
+│  (Blockbench desktop) │  undo entries, viewport refresh, scope dialogs
 └───────────────────────┘
 ```
 
-- Adapter never mutates model files itself.
-- Plugin is the only process that touches Blockbench state.
-- If the plugin disconnects, tools fail fast with `E_PLUGIN_DISCONNECTED` (MCP process stays alive).
+- Plugin is the only process; it binds loopback HTTP via Blockbench `require('net')`.
+- Closing Blockbench stops MCP (accepted trade-off for one-install UX).
+- Legacy Pattern B (`packages/adapter` stdio + WS) is optional: `npm run build:legacy-adapter`.
 
 ## Packages
 
 | Package | Role |
 |---------|------|
 | `packages/shared` | Command registry, Zod params/results, error codes, screenshot/check contracts |
-| `packages/adapter` | stdio MCP server + WS client/bridge + config |
-| `packages/plugin` | Blockbench desktop plugin: WS server, command handlers |
-| `apps/smoke` (later) | Protocol + disconnect smoke tests |
+| `packages/plugin` | Blockbench desktop plugin: HTTP MCP + command handlers |
+| `packages/adapter` | Legacy stdio MCP + WS bridge (not in default build) |
 
 ## Intent-level tool surface (v1)
 

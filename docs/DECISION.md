@@ -28,7 +28,14 @@ Do **not** fork [jasonjgardner/blockbench-mcp-plugin](https://github.com/jasonjg
 - `trigger_action` / `emulate_clicks` / `risky_eval` as primary surface
 - Full Blockbench paint-tool parity
 - Hytale / PBR / armature skinning as first-class tools
-- Hosting MCP inside the Blockbench process (Pattern A)
+
+## Hosting model (updated)
+
+**In-process HTTP MCP inside the Blockbench desktop plugin (Pattern A)** is the product path: install plugin → AI client connects via `http://127.0.0.1:<port>/mcp`.
+
+The earlier stdio adapter ↔ WebSocket split (Pattern B) remains under `packages/adapter` as a legacy optional build only.
+
+Trade-off accepted: MCP is unavailable while Blockbench is closed.
 
 ## What we borrow
 
@@ -43,4 +50,4 @@ Do **not** fork [jasonjgardner/blockbench-mcp-plugin](https://github.com/jasonjg
 1. Agent can create a simple Java block + a simple GeckoLib limb hierarchy with **bulk** intents in few tool calls.
 2. Every mutating tool returns explicit success/failure; no silent parameter drops.
 3. Screenshots default to low-res multi-angle; structured `check_model` is preferred over vision spam.
-4. Adapter survives Blockbench disconnect with a clear `plugin_connected: false` health signal (not a hung MCP).
+4. Plugin hosts MCP on loopback HTTP; tools fail clearly when Blockbench/plugin is stopped.

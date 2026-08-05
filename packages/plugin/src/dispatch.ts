@@ -13,7 +13,7 @@ import { mirrorElements } from "./geometry/mirror.js";
 import { proposeScopedDirectory, exportModel } from "./commands/scope-export.js";
 import { upsertAnimation } from "./commands/animation.js";
 import { requireProject } from "./bb/elements.js";
-import type { ProjectFormat } from "@blockbench-mcp/shared";
+import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 
 export async function dispatchCommand(
   session: SessionState,
@@ -29,7 +29,10 @@ export async function dispatchCommand(
       case "capture_views":
         return await captureViews((params ?? {}) as never);
       case "get_guide":
-        return { topic: "modeling", text: "Use adapter get_guide." };
+        return resolveGuide(
+          (params as { topic?: "modeling" | "texturing" | "animation" | "java_block" | "geckolib" } | null)
+            ?.topic,
+        );
       case "create_project": {
         const p = params as {
           format: ProjectFormat;

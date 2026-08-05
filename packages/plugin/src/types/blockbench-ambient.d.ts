@@ -143,3 +143,20 @@ declare const Settings: {
 };
 
 declare const settings: Record<string, { value?: unknown }>;
+
+declare class Action {
+  constructor(
+    id: string,
+    options: {
+      name: string;
+      icon?: string;
+      category?: string;
+      click: () => void;
+    },
+  );
+  delete: () => void;
+  setName?: (name: string) => void;
+  setIcon?: (icon: string) => void;
+}
+
+declare function require(id: string): unknown;
