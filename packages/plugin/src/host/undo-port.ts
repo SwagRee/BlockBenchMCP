@@ -37,21 +37,44 @@ export function createUndoPort(): UndoPort {
       const Undo = undoApi();
       const createdEls: BbElementRef[] = [];
       const createdTex: BbElementRef[] = [];
-      Undo.initEdit(aspects);
+      const liveEls: unknown[] = [];
+      const liveTex: unknown[] = [];
+      // Avoid empty `elements: []` — BB 5.1 can throw getUndoCopy on bad aspect entries.
+      const initAspects = { ...aspects };
+      if (Array.isArray(initAspects.elements) && (initAspects.elements as unknown[]).length === 0) {
+        delete initAspects.elements;
+      }
+      if (Array.isArray(initAspects.textures) && (initAspects.textures as unknown[]).length === 0) {
+        delete initAspects.textures;
+      }
+      Undo.initEdit(initAspects);
       try {
         const track: UndoTrack = {
-          addElements: (els) => createdEls.push(...els),
-          addTextures: (texs) => createdTex.push(...texs),
+          addElements: (els) => {
+            createdEls.push(...els);
+            for (const e of els) {
+              if (e && typeof e === "object" && "uuid" in e && "getUndoCopy" in (e as object)) {
+                liveEls.push(e);
+              }
+            }
+          },
+          addTextures: (texs) => {
+            createdTex.push(...texs);
+            for (const t of texs) {
+              if (t && typeof t === "object" && "uuid" in t && "getUndoCopy" in (t as object)) {
+                liveTex.push(t);
+              }
+            }
+          },
         };
         const result = fn(track);
-        const finish: Record<string, unknown> = { ...aspects };
-        if (createdEls.length) {
-          // Pass live objects when available on global Cube/Group lists.
-          finish.elements = resolveLive(createdEls);
-        }
-        if (createdTex.length) {
-          finish.textures = resolveLiveTextures(createdTex);
-        }
+        const finish: Record<string, unknown> = { ...initAspects };
+        const els = liveEls.length ? liveEls : resolveLive(createdEls);
+        const texs = liveTex.length ? liveTex : resolveLiveTextures(createdTex);
+        if (els.length) finish.elements = els;
+        else delete finish.elements;
+        if (texs.length) finish.textures = texs;
+        else delete finish.textures;
         Undo.finishEdit(label, finish);
         return result;
       } catch (err) {

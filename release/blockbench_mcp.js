@@ -5990,20 +5990,43 @@ ${payload}`);
         const Undo = undoApi();
         const createdEls = [];
         const createdTex = [];
-        Undo.initEdit(aspects);
+        const liveEls = [];
+        const liveTex = [];
+        const initAspects = { ...aspects };
+        if (Array.isArray(initAspects.elements) && initAspects.elements.length === 0) {
+          delete initAspects.elements;
+        }
+        if (Array.isArray(initAspects.textures) && initAspects.textures.length === 0) {
+          delete initAspects.textures;
+        }
+        Undo.initEdit(initAspects);
         try {
           const track = {
-            addElements: (els) => createdEls.push(...els),
-            addTextures: (texs) => createdTex.push(...texs)
+            addElements: (els2) => {
+              createdEls.push(...els2);
+              for (const e of els2) {
+                if (e && typeof e === "object" && "uuid" in e && "getUndoCopy" in e) {
+                  liveEls.push(e);
+                }
+              }
+            },
+            addTextures: (texs2) => {
+              createdTex.push(...texs2);
+              for (const t of texs2) {
+                if (t && typeof t === "object" && "uuid" in t && "getUndoCopy" in t) {
+                  liveTex.push(t);
+                }
+              }
+            }
           };
           const result = fn(track);
-          const finish = { ...aspects };
-          if (createdEls.length) {
-            finish.elements = resolveLive(createdEls);
-          }
-          if (createdTex.length) {
-            finish.textures = resolveLiveTextures(createdTex);
-          }
+          const finish = { ...initAspects };
+          const els = liveEls.length ? liveEls : resolveLive(createdEls);
+          const texs = liveTex.length ? liveTex : resolveLiveTextures(createdTex);
+          if (els.length) finish.elements = els;
+          else delete finish.elements;
+          if (texs.length) finish.textures = texs;
+          else delete finish.textures;
           Undo.finishEdit(label, finish);
           return result;
         } catch (err) {
@@ -6562,13 +6585,16 @@ ${payload}`);
   function applyGeometryBatch(opts) {
     requireProject();
     const label = opts.undo_label ?? "apply_geometry_batch";
+    const pendingGroups = new Set(
+      (opts.create_groups ?? []).map((g) => g.name)
+    );
     for (const g of opts.create_groups ?? []) {
-      if (g.parent && g.parent !== "root" && !findElement(g.parent)) {
+      if (g.parent && g.parent !== "root" && !pendingGroups.has(g.parent) && !findElement(g.parent)) {
         throw new CommandError("E_PARTIAL_FORBIDDEN", `Missing parent group: ${g.parent}`);
       }
     }
     for (const c of opts.create_cubes ?? []) {
-      if (c.parent && c.parent !== "root" && !findElement(c.parent)) {
+      if (c.parent && c.parent !== "root" && !pendingGroups.has(c.parent) && !findElement(c.parent)) {
         throw new CommandError("E_PARTIAL_FORBIDDEN", `Missing parent for cube: ${c.parent}`);
       }
     }
@@ -6593,7 +6619,7 @@ ${payload}`);
         nameToGroup.set(group.name, group);
         const row = { uuid: group.uuid, name: group.name, type: "group" };
         created.push(row);
-        track.addElements([row]);
+        track.addElements([group]);
       }
       const tex = host.textures.defaultOrFirst();
       for (const spec of opts.create_cubes ?? []) {
@@ -6612,7 +6638,7 @@ ${payload}`);
         if (tex) tex.applyToCube(cube.uuid, true);
         const row = { uuid: cube.uuid, name: cube.name, type: "cube" };
         created.push(row);
-        track.addElements([row]);
+        track.addElements([cube]);
       }
       for (const id of opts.delete_uuids ?? []) {
         const el = findElement(id);

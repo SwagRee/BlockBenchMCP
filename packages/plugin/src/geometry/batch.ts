@@ -29,13 +29,26 @@ export function applyGeometryBatch(opts: {
 } {
   requireProject();
   const label = opts.undo_label ?? "apply_geometry_batch";
+  const pendingGroups = new Set(
+    (opts.create_groups ?? []).map((g) => g.name),
+  );
   for (const g of opts.create_groups ?? []) {
-    if (g.parent && g.parent !== "root" && !findElement(g.parent)) {
+    if (
+      g.parent &&
+      g.parent !== "root" &&
+      !pendingGroups.has(g.parent) &&
+      !findElement(g.parent)
+    ) {
       throw new CommandError("E_PARTIAL_FORBIDDEN", `Missing parent group: ${g.parent}`);
     }
   }
   for (const c of opts.create_cubes ?? []) {
-    if (c.parent && c.parent !== "root" && !findElement(c.parent)) {
+    if (
+      c.parent &&
+      c.parent !== "root" &&
+      !pendingGroups.has(c.parent) &&
+      !findElement(c.parent)
+    ) {
       throw new CommandError("E_PARTIAL_FORBIDDEN", `Missing parent for cube: ${c.parent}`);
     }
   }
@@ -69,7 +82,7 @@ export function applyGeometryBatch(opts: {
       nameToGroup.set(group.name, group);
       const row = { uuid: group.uuid, name: group.name, type: "group" };
       created.push(row);
-      track.addElements([row]);
+      track.addElements([group as unknown as { uuid: string; name: string }]);
     }
 
     const tex = host.textures.defaultOrFirst();
@@ -96,7 +109,7 @@ export function applyGeometryBatch(opts: {
       if (tex) tex.applyToCube(cube.uuid, true);
       const row = { uuid: cube.uuid, name: cube.name, type: "cube" };
       created.push(row);
-      track.addElements([row]);
+      track.addElements([cube as unknown as { uuid: string; name: string }]);
     }
 
     for (const id of opts.delete_uuids ?? []) {
