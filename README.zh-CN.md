@@ -2,6 +2,9 @@
 
 [English](README.md) | **简体中文**
 
+> GitHub 的 README 不能跑 JS，上面的语言链接会换文件。  
+> 若要 **本页显隐切换、不跳转**：[文档站语言切换](https://swagree.github.io/BlockBenchMCP/)
+
 面向 Minecraft 的 **[Model Context Protocol](https://modelcontextprotocol.io/)** 桥接，对接 [Blockbench](https://www.blockbench.net/) 桌面版 **≥ 5.1.0**。
 
 AI 客户端 → **stdio MCP 适配器** → 本机 WebSocket → **Blockbench 插件**（只有插件会改模型）。
