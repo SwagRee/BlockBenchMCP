@@ -89,7 +89,7 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 
 ## Agent Skill
 
-像素风建模手册：[`skills/blockbench-pixel-art`](../skills/blockbench-pixel-art/SKILL.md)。
+像素风建模手册：[`skills/blockbench-pixel-art/openai`](../skills/blockbench-pixel-art/openai/SKILL.md)。
 
 ## 许可证
 

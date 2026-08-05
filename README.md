@@ -89,7 +89,7 @@ Check `uv_mode` on `health` / `get_project_summary`: `java_block` → face; Bedr
 
 ## Agent skill
 
-Pixel-art modeling playbook: [`skills/blockbench-pixel-art`](./skills/blockbench-pixel-art/SKILL.md).
+Pixel-art modeling playbook: [`skills/blockbench-pixel-art/openai`](./skills/blockbench-pixel-art/openai/SKILL.md).
 
 ## License
 
