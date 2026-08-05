@@ -6,7 +6,7 @@ export const GUIDE_MODELING = `
 1. get_guide(modeling) then create_project(format).
 2. Entities: scaffold_biped FIRST (correct pivots). Blocks: apply_geometry_batch.
 3. check_model immediately. Fix every error before texturing.
-4. ensure_texture → auto_uv_cubes → paint_face_feature for details.
+4. Texturing: pack_box_uv → shade_model_base → paint_face_features. (scaffold_biped already packs.)
 5. capture_views only after check_model is clean (max_edge 256).
 
 ## Proportions
@@ -25,10 +25,11 @@ export const GUIDE_MODELING = `
 export const GUIDE_TEXTURING = `
 # Texturing
 
-1. ensure_texture(64 for entities, 16 for blocks) then auto_uv_cubes(mode=box).
-2. Base fill → darker sides via paint_face_feature → eyes/trim last.
-3. Face-local (0,0)=top-left of that face UV. Palette 4–8 colors.
-4. Re-run check_model for UNTEXTURED_FACE.
+1. ensure_texture (64 entities / 16 blocks). Prefer pack_box_uv so faces do not share pixels.
+2. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
+3. paint_face_features for eyes/mouth/trim (batch ops, face-local 0,0 = face UV top-left).
+4. get_texture to inspect the sheet; fix gaps; re-check_model for UNTEXTURED_FACE.
+5. Palette 4–8 colors. Avoid painting before pack_box_uv.
 `.trim();
 
 export const GUIDE_ANIMATION = `

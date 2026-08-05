@@ -8,7 +8,14 @@ import { applyGeometryBatch } from "./geometry/batch.js";
 import { createLimb } from "./geometry/limb.js";
 import { scaffoldBiped } from "./geometry/biped.js";
 import { ensureTexture } from "./texture/ensure.js";
-import { autoUvCubes, paintFaceFeature } from "./paint/face-feature.js";
+import { getTexture } from "./texture/get.js";
+import {
+  autoUvCubes,
+  paintFaceFeature,
+  paintFaceFeatures,
+  packBoxUv,
+  shadeModelBase,
+} from "./paint/face-feature.js";
 import { mirrorElements } from "./geometry/mirror.js";
 import { proposeScopedDirectory, exportModel } from "./commands/scope-export.js";
 import { upsertAnimation } from "./commands/animation.js";
@@ -57,10 +64,18 @@ export async function dispatchCommand(
       }
       case "auto_uv_cubes":
         return autoUvCubes((params ?? {}) as never);
+      case "pack_box_uv":
+        return packBoxUv((params ?? {}) as never);
+      case "shade_model_base":
+        return shadeModelBase((params ?? {}) as never);
       case "mirror_elements":
         return mirrorElements((params ?? {}) as never);
       case "paint_face_feature":
         return paintFaceFeature((params ?? {}) as never);
+      case "paint_face_features":
+        return paintFaceFeatures((params ?? {}) as never);
+      case "get_texture":
+        return getTexture((params ?? {}) as never);
       case "upsert_animation":
         return upsertAnimation((params ?? {}) as never);
       case "propose_scoped_directory":

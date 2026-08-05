@@ -30,6 +30,8 @@ export interface TextureHandle extends BbElementRef {
     editName: string,
   ) => void;
   applyToCube: (cubeUuid: string, faces?: true | string[]) => void;
+  /** PNG data URL, optionally downscaled to maxEdge. */
+  toDataURL: (maxEdge?: number) => string;
 }
 
 export interface TexturePort {

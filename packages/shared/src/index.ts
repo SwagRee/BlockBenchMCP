@@ -51,6 +51,13 @@ export {
 } from "./contracts-extra.js";
 
 export {
+  packBoxUvParamsSchema,
+  shadeModelBaseParamsSchema,
+  paintFaceFeaturesParamsSchema,
+  getTextureParamsSchema,
+} from "./contracts-texture.js";
+
+export {
   helloMessageSchema,
   helloAckSchema,
   requestMessageSchema,
@@ -91,5 +98,5 @@ export {
 } from "./capabilities.js";
 export type { CapabilityId } from "./capabilities.js";
 
-export const ADAPTER_VERSION = "0.1.0";
-export const PLUGIN_VERSION = "0.1.0";
+export const ADAPTER_VERSION = "0.1.3";
+export const PLUGIN_VERSION = "0.1.3";

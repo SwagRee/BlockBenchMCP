@@ -76,6 +76,35 @@ export function scaffoldBiped(opts: {
       push(cubeOn(`${prefix}hat`, head, [-4.5 * s, 23.5 * s, -4.5 * s], [9 * s, 9 * s, 9 * s], [0, 24 * s, 0], skin.uuid, 0.25 * s), "cube");
     }
 
+    // Pack box UVs so limbs do not share the same atlas pixels (critical for shading).
+    const cubes = Cube.all.filter((c) => c.name.startsWith(prefix) || !prefix);
+    let x = 0;
+    let y = 0;
+    let rowH = 0;
+    const pad = 1;
+    const items = cubes
+      .map((c) => {
+        const w = Math.max(1, Math.ceil(Math.abs(c.to[0] - c.from[0])));
+        const h = Math.max(1, Math.ceil(Math.abs(c.to[1] - c.from[1])));
+        const d = Math.max(1, Math.ceil(Math.abs(c.to[2] - c.from[2])));
+        return { c, fw: 2 * (w + d), fh: h + d };
+      })
+      .sort((a, b) => b.fh - a.fh);
+    for (const it of items) {
+      if (x + it.fw + pad > texSize && x > 0) {
+        x = 0;
+        y += rowH + pad;
+        rowH = 0;
+      }
+      it.c.box_uv = true;
+      it.c.uv_offset = [x, y];
+      it.c.autouv = 0;
+      it.c.mapAutoUV?.();
+      skin.applyToCube(it.c.uuid, true);
+      x += it.fw + pad;
+      rowH = Math.max(rowH, it.fh);
+    }
+
     refreshView(created);
     const check = runCheckModel();
     return { ok: true as const, undo_label: label, created, check };

@@ -18,8 +18,10 @@ describe("generation smoke contract", () => {
       "scaffold_biped",
       "check_model",
       "ensure_texture",
-      "auto_uv_cubes",
-      "paint_face_feature",
+      "pack_box_uv",
+      "shade_model_base",
+      "paint_face_features",
+      "get_texture",
       "capture_views",
     ] as const;
     for (const name of pipeline) {
@@ -27,6 +29,15 @@ describe("generation smoke contract", () => {
       assert.ok(COMMAND_SPECS[name].description.length > 10);
     }
     assert.ok(COMMAND_NAMES.includes("apply_geometry_batch"));
+    assert.ok(COMMAND_NAMES.includes("paint_face_feature"));
+    assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
+  });
+
+  it("texturing guide prefers pack + shade before features", () => {
+    const g = resolveGuide("texturing");
+    assert.match(g.text, /pack_box_uv/i);
+    assert.match(g.text, /shade_model_base/i);
+    assert.match(g.text, /paint_face_features/i);
   });
 
   it("modeling guide mandates scaffold + check before vision", () => {

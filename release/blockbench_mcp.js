@@ -4274,6 +4274,53 @@
     replace: external_exports.boolean().optional()
   }).strict();
 
+  // ../shared/dist/contracts-texture.js
+  var faceEnum = external_exports.enum(["north", "south", "east", "west", "up", "down"]);
+  var packBoxUvParamsSchema = external_exports.object({
+    cubes: external_exports.array(external_exports.string().min(1)).optional(),
+    padding: external_exports.number().int().nonnegative().max(8).optional(),
+    /** Grow Project.texture_* and bitmap if packed extent overflows. */
+    auto_resize: external_exports.boolean().optional()
+  }).strict();
+  var shadeModelBaseParamsSchema = external_exports.object({
+    cubes: external_exports.array(external_exports.string().min(1)).optional(),
+    texture: external_exports.string().optional(),
+    base: external_exports.string().min(1).optional(),
+    /** First regex match wins: [{ match: "head", color: "#C68642" }, ...] */
+    regions: external_exports.array(external_exports.object({
+      match: external_exports.string().min(1),
+      color: external_exports.string().min(1)
+    }).strict()).optional(),
+    top_light: external_exports.number().min(0).max(1).optional(),
+    bottom_dark: external_exports.number().min(0).max(1).optional(),
+    noise: external_exports.number().min(0).max(1).optional(),
+    blur: external_exports.number().min(0).max(1).optional(),
+    edge_darken: external_exports.number().min(0).max(1).optional()
+  }).strict();
+  var paintOpSchema = external_exports.object({
+    type: external_exports.enum(["fill", "rect", "ellipse", "line"]),
+    x: external_exports.number().optional(),
+    y: external_exports.number().optional(),
+    width: external_exports.number().positive().optional(),
+    height: external_exports.number().positive().optional(),
+    x2: external_exports.number().optional(),
+    y2: external_exports.number().optional(),
+    color: external_exports.string().min(1)
+  }).strict();
+  var paintFaceFeaturesParamsSchema = external_exports.object({
+    texture: external_exports.string().optional(),
+    faces: external_exports.array(external_exports.object({
+      cube: external_exports.string().min(1),
+      face: faceEnum,
+      ops: external_exports.array(paintOpSchema).min(1)
+    }).strict()).min(1)
+  }).strict();
+  var getTextureParamsSchema = external_exports.object({
+    texture: external_exports.string().optional(),
+    /** Longest edge cap for returned image (default 256). */
+    max_edge: external_exports.number().int().positive().max(1024).optional()
+  }).strict();
+
   // ../shared/dist/capabilities.js
   var MIN_BLOCKBENCH_VERSION = "5.1.0";
   var CAPABILITY_IDS = [
@@ -4328,7 +4375,7 @@
 1. get_guide(modeling) then create_project(format).
 2. Entities: scaffold_biped FIRST (correct pivots). Blocks: apply_geometry_batch.
 3. check_model immediately. Fix every error before texturing.
-4. ensure_texture \u2192 auto_uv_cubes \u2192 paint_face_feature for details.
+4. Texturing: pack_box_uv \u2192 shade_model_base \u2192 paint_face_features. (scaffold_biped already packs.)
 5. capture_views only after check_model is clean (max_edge 256).
 
 ## Proportions
@@ -4346,10 +4393,11 @@
   var GUIDE_TEXTURING = `
 # Texturing
 
-1. ensure_texture(64 for entities, 16 for blocks) then auto_uv_cubes(mode=box).
-2. Base fill \u2192 darker sides via paint_face_feature \u2192 eyes/trim last.
-3. Face-local (0,0)=top-left of that face UV. Palette 4\u20138 colors.
-4. Re-run check_model for UNTEXTURED_FACE.
+1. ensure_texture (64 entities / 16 blocks). Prefer pack_box_uv so faces do not share pixels.
+2. shade_model_base with regions (head/body/arm/leg colors) \u2014 soft lighting + blur. Do NOT flat-fill everything.
+3. paint_face_features for eyes/mouth/trim (batch ops, face-local 0,0 = face UV top-left).
+4. get_texture to inspect the sheet; fix gaps; re-check_model for UNTEXTURED_FACE.
+5. Palette 4\u20138 colors. Avoid painting before pack_box_uv.
 `.trim();
   var GUIDE_ANIMATION = `
 # Animation
@@ -4438,9 +4486,19 @@
       params: ensureTextureParamsSchema
     },
     auto_uv_cubes: {
-      description: "Box-UV (or face) map named cubes / all cubes.",
+      description: "Box-UV (or face) map named cubes / all cubes. Prefer pack_box_uv for unique islands.",
       mutates: true,
       params: autoUvCubesParamsSchema
+    },
+    pack_box_uv: {
+      description: "Shelf-pack box UVs so cubes do not share pixels. Call BEFORE shade_model_base / paint. auto_resize grows atlas if needed.",
+      mutates: true,
+      params: packBoxUvParamsSchema
+    },
+    shade_model_base: {
+      description: "BEST texture base: assign texture, region colors by name regex, soft face lighting + mottle + blur (sosadly-style). Then paint features.",
+      mutates: true,
+      params: shadeModelBaseParamsSchema
     },
     mirror_elements: {
       description: "Mirror named groups/cubes across an axis with smart rename.",
@@ -4448,9 +4506,19 @@
       params: mirrorElementsParamsSchema
     },
     paint_face_feature: {
-      description: "Paint rect/ellipse/fill in face-local UV space (eyes, trim). Not raw brushes.",
+      description: "Paint one rect/ellipse/fill in face-local UV space. Prefer paint_face_features for batches.",
       mutates: true,
       params: paintFaceFeatureParamsSchema
+    },
+    paint_face_features: {
+      description: "Batch face-local paint ops (fill/rect/ellipse/line) in ONE undo \u2014 eyes, mouth, trim across many faces.",
+      mutates: true,
+      params: paintFaceFeaturesParamsSchema
+    },
+    get_texture: {
+      description: "Inspect the texture sheet as a compact PNG data_url (default max_edge 256).",
+      mutates: false,
+      params: getTextureParamsSchema
     },
     upsert_animation: {
       description: "Create/replace a simple bone animation clip (rotation/position keys).",
@@ -4474,7 +4542,7 @@
   var COMMAND_NAMES = Object.keys(COMMAND_SPECS);
 
   // ../shared/dist/index.js
-  var PLUGIN_VERSION = "0.1.0";
+  var PLUGIN_VERSION = "0.1.3";
 
   // src/config.ts
   function readPluginConfig() {
@@ -6091,6 +6159,23 @@ ${payload}`);
         const cube = Cube2?.all.find((c) => c.uuid === cubeUuid);
         if (!cube) throw new CommandError("E_NOT_FOUND", `Cube ${cubeUuid}`);
         cube.applyTexture(tex, faces);
+      },
+      toDataURL(maxEdge = 256) {
+        const src = tex.canvas ?? (() => {
+          throw new CommandError("E_BLOCKBENCH_ERROR", "Texture has no canvas for export");
+        })();
+        const w = src.width || tex.width;
+        const h = src.height || tex.height;
+        const scale = Math.min(1, maxEdge / Math.max(w, h, 1));
+        if (scale >= 0.999) return src.toDataURL("image/png");
+        const out = document.createElement("canvas");
+        out.width = Math.max(1, Math.round(w * scale));
+        out.height = Math.max(1, Math.round(h * scale));
+        const ctx = out.getContext("2d");
+        if (!ctx) throw new CommandError("E_BLOCKBENCH_ERROR", "No 2d context");
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(src, 0, 0, out.width, out.height);
+        return out.toDataURL("image/png");
       }
     };
   }
@@ -6777,6 +6862,31 @@ ${payload}`);
       if (opts.include_outer_layers) {
         push(cubeOn(`${prefix}hat`, head, [-4.5 * s, 23.5 * s, -4.5 * s], [9 * s, 9 * s, 9 * s], [0, 24 * s, 0], skin.uuid, 0.25 * s), "cube");
       }
+      const cubes = Cube.all.filter((c) => c.name.startsWith(prefix) || !prefix);
+      let x = 0;
+      let y = 0;
+      let rowH = 0;
+      const pad = 1;
+      const items = cubes.map((c) => {
+        const w = Math.max(1, Math.ceil(Math.abs(c.to[0] - c.from[0])));
+        const h = Math.max(1, Math.ceil(Math.abs(c.to[1] - c.from[1])));
+        const d = Math.max(1, Math.ceil(Math.abs(c.to[2] - c.from[2])));
+        return { c, fw: 2 * (w + d), fh: h + d };
+      }).sort((a, b) => b.fh - a.fh);
+      for (const it of items) {
+        if (x + it.fw + pad > texSize && x > 0) {
+          x = 0;
+          y += rowH + pad;
+          rowH = 0;
+        }
+        it.c.box_uv = true;
+        it.c.uv_offset = [x, y];
+        it.c.autouv = 0;
+        it.c.mapAutoUV?.();
+        skin.applyToCube(it.c.uuid, true);
+        x += it.fw + pad;
+        rowH = Math.max(rowH, it.fh);
+      }
       refreshView(created);
       const check = runCheckModel();
       return { ok: true, undo_label: label, created, check };
@@ -6833,6 +6943,367 @@ ${payload}`);
     });
   }
 
+  // src/texture/get.ts
+  function getTexture(opts) {
+    requireProject();
+    const host = getHost();
+    const tex = (opts.texture ? host.textures.find(opts.texture) : void 0) ?? host.textures.defaultOrFirst();
+    if (!tex) throw new CommandError("E_NOT_FOUND", "No texture in project");
+    const maxEdge = opts.max_edge ?? 256;
+    const dataUrl = tex.toDataURL(maxEdge);
+    return {
+      name: tex.name,
+      uuid: tex.uuid,
+      width: tex.width,
+      height: tex.height,
+      max_edge: maxEdge,
+      mime: "image/png",
+      data_url: dataUrl
+    };
+  }
+
+  // src/paint/face-batch.ts
+  function applyOp(ctx, originX, originY, faceW, faceH, op) {
+    ctx.fillStyle = op.color;
+    ctx.strokeStyle = op.color;
+    if (op.type === "fill") {
+      ctx.fillRect(originX, originY, faceW, faceH);
+      return;
+    }
+    if (op.type === "line") {
+      const x1 = originX + (op.x ?? 0);
+      const y1 = originY + (op.y ?? 0);
+      const x2 = originX + (op.x2 ?? op.x ?? 0);
+      const y2 = originY + (op.y2 ?? op.y ?? 0);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineWidth = Math.max(1, op.width ?? 1);
+      ctx.stroke();
+      return;
+    }
+    const x = originX + (op.x ?? 0);
+    const y = originY + (op.y ?? 0);
+    const w = op.width ?? 1;
+    const h = op.height ?? 1;
+    if (op.type === "rect") {
+      ctx.fillRect(x, y, w, h);
+      return;
+    }
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function paintFaceFeatures(opts) {
+    requireProject();
+    if (!opts.faces?.length) {
+      throw new CommandError("E_INVALID_PARAM", "faces[] required");
+    }
+    const host = getHost();
+    const tex = (opts.texture ? host.textures.find(opts.texture) : void 0) ?? host.textures.defaultOrFirst();
+    if (!tex) throw new CommandError("E_NOT_FOUND", "No texture available");
+    const jobs = opts.faces.map((item) => {
+      const cube = requireCube(item.cube);
+      const face = cube.faces?.[item.face];
+      if (!face) {
+        throw new CommandError(
+          "E_INVALID_PARAM",
+          `Face not found: ${item.cube}.${item.face}`
+        );
+      }
+      const uv = face.uv ?? [0, 0, 16, 16];
+      return {
+        cube,
+        faceName: item.face,
+        originX: Math.min(uv[0], uv[2]),
+        originY: Math.min(uv[1], uv[3]),
+        faceW: Math.abs(uv[2] - uv[0]) || 1,
+        faceH: Math.abs(uv[3] - uv[1]) || 1,
+        ops: item.ops
+      };
+    });
+    return host.undo.run(
+      { textures: [], bitmap: true, uv_only: true },
+      "paint_face_features",
+      (track) => {
+        track.addTextures([tex]);
+        for (const job of jobs) {
+          tex.applyToCube(job.cube.uuid, [job.faceName]);
+        }
+        tex.edit((ctx) => {
+          ctx.imageSmoothingEnabled = false;
+          for (const job of jobs) {
+            for (const op of job.ops) {
+              applyOp(ctx, job.originX, job.originY, job.faceW, job.faceH, op);
+            }
+          }
+        }, "paint_face_features");
+        refreshView(jobs.map((j) => ({ uuid: j.cube.uuid, name: j.cube.name })));
+        return {
+          ok: true,
+          undo_label: "paint_face_features",
+          painted: jobs.length
+        };
+      }
+    );
+  }
+  function paintFaceFeature(opts) {
+    const op = opts.feature === "fill" ? { type: "fill", color: opts.color } : {
+      type: opts.feature,
+      x: opts.x,
+      y: opts.y,
+      width: opts.width,
+      height: opts.height,
+      color: opts.color
+    };
+    paintFaceFeatures({
+      texture: opts.texture,
+      faces: [{ cube: opts.cube, face: opts.face, ops: [op] }]
+    });
+    return { ok: true, undo_label: "paint_face_feature" };
+  }
+
+  // src/paint/color.ts
+  function clamp8(n) {
+    return Math.max(0, Math.min(255, Math.round(n)));
+  }
+  function parseHex(color) {
+    const s = color.trim();
+    const m = /^#?([0-9a-f]{6})$/i.exec(s);
+    if (!m) return [154, 154, 154];
+    const n = parseInt(m[1], 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+  function shadeHex(color, factor) {
+    const [r, g, b] = parseHex(color);
+    const rr = clamp8(r * factor);
+    const gg = clamp8(g * factor);
+    const bb = clamp8(b * factor);
+    return `#${(1 << 24 | rr << 16 | gg << 8 | bb).toString(16).slice(1)}`;
+  }
+  function regionColorFor(name, regions, base) {
+    if (!regions?.length) return base;
+    for (const rule of regions) {
+      try {
+        if (new RegExp(rule.match, "i").test(name)) return rule.color;
+      } catch {
+      }
+    }
+    return base;
+  }
+  function blurRect(ctx, rx, ry, rw, rh, amt) {
+    if (rw < 2 || rh < 2 || amt <= 0) return;
+    const src = ctx.getImageData(rx, ry, rw, rh);
+    const s = src.data;
+    const out = ctx.createImageData(rw, rh);
+    const d = out.data;
+    for (let y = 0; y < rh; y++) {
+      for (let x = 0; x < rw; x++) {
+        let R = 0;
+        let G = 0;
+        let B = 0;
+        let A = 0;
+        let N = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx;
+            const yy = y + dy;
+            if (xx < 0 || yy < 0 || xx >= rw || yy >= rh) continue;
+            const i = (yy * rw + xx) * 4;
+            R += s[i];
+            G += s[i + 1];
+            B += s[i + 2];
+            A += s[i + 3];
+            N++;
+          }
+        }
+        const o = (y * rw + x) * 4;
+        d[o] = clamp8(s[o] * (1 - amt) + R / N * amt);
+        d[o + 1] = clamp8(s[o + 1] * (1 - amt) + G / N * amt);
+        d[o + 2] = clamp8(s[o + 2] * (1 - amt) + B / N * amt);
+        d[o + 3] = clamp8(s[o + 3] * (1 - amt) + A / N * amt);
+      }
+    }
+    ctx.putImageData(out, rx, ry);
+  }
+
+  // src/paint/shade-base.ts
+  function facePixelRect(face, scale) {
+    const uv = face.uv;
+    if (!uv || uv.length < 4) return null;
+    const x0 = Math.min(uv[0], uv[2]) * scale;
+    const y0 = Math.min(uv[1], uv[3]) * scale;
+    const x1 = Math.max(uv[0], uv[2]) * scale;
+    const y1 = Math.max(uv[1], uv[3]) * scale;
+    const w = Math.max(1, Math.round(x1 - x0));
+    const h = Math.max(1, Math.round(y1 - y0));
+    return { x: Math.round(x0), y: Math.round(y0), w, h };
+  }
+  function shadeModelBase(opts) {
+    requireProject();
+    const list = opts.cubes && opts.cubes.length > 0 ? opts.cubes.map((n) => requireCube(n)) : [...Cube.all];
+    if (!list.length) throw new CommandError("E_NOT_FOUND", "No cubes to shade.");
+    const host = getHost();
+    const tex = (opts.texture ? host.textures.find(opts.texture) : void 0) ?? host.textures.defaultOrFirst();
+    if (!tex) throw new CommandError("E_NOT_FOUND", "No texture \u2014 call ensure_texture first.");
+    const base = opts.base ?? "#9c9c9c";
+    const mottle = opts.noise ?? 0.06;
+    const blurAmt = opts.blur ?? 0.45;
+    const topLight = opts.top_light ?? 0.12;
+    const bottomDark = opts.bottom_dark ?? 0.22;
+    const edgeDark = opts.edge_darken ?? 0;
+    const faceMul = {
+      up: 1 + topLight,
+      down: 1 - bottomDark,
+      north: 0.95,
+      south: 1,
+      east: 1.06,
+      west: 0.88
+    };
+    const Project2 = globalThis.Project;
+    const scale = tex.width / (Project2?.texture_width || tex.width || 64);
+    return host.undo.run(
+      { elements: list, textures: [], bitmap: true, uv_only: true },
+      "shade_model_base",
+      (track) => {
+        track.addTextures([tex]);
+        const jobs = [];
+        for (const cube of list) {
+          const col = regionColorFor(cube.name, opts.regions, base);
+          tex.applyToCube(cube.uuid, true);
+          for (const dir of Object.keys(cube.faces ?? {})) {
+            const face = cube.faces[dir];
+            if (!face) continue;
+            const r = facePixelRect(face, scale);
+            if (!r) continue;
+            jobs.push({
+              ...r,
+              base: col,
+              mul: faceMul[dir] ?? 1
+            });
+          }
+        }
+        tex.edit((ctx) => {
+          ctx.imageSmoothingEnabled = false;
+          for (const job of jobs) {
+            const g = ctx.createLinearGradient(0, job.y, 0, job.y + job.h);
+            g.addColorStop(0, shadeHex(job.base, job.mul * 1.1));
+            g.addColorStop(1, shadeHex(job.base, job.mul * 0.84));
+            ctx.fillStyle = g;
+            ctx.fillRect(job.x, job.y, job.w, job.h);
+            if (edgeDark > 0 && job.w > 2 && job.h > 2) {
+              ctx.fillStyle = shadeHex(job.base, job.mul * (1 - edgeDark));
+              ctx.fillRect(job.x, job.y, job.w, 1);
+              ctx.fillRect(job.x, job.y + job.h - 1, job.w, 1);
+              ctx.fillRect(job.x, job.y, 1, job.h);
+              ctx.fillRect(job.x + job.w - 1, job.y, 1, job.h);
+            }
+          }
+          if (mottle > 0) {
+            for (const job of jobs) {
+              const count = Math.max(1, Math.floor(job.w * job.h * 0.1));
+              for (let i = 0; i < count; i++) {
+                const px = job.x + (Math.random() * job.w | 0);
+                const py = job.y + (Math.random() * job.h | 0);
+                ctx.fillStyle = shadeHex(
+                  job.base,
+                  job.mul * (1 - mottle + Math.random() * mottle * 2)
+                );
+                ctx.fillRect(px, py, 1, Math.random() < 0.5 ? 2 : 1);
+              }
+            }
+          }
+          if (blurAmt > 0) {
+            for (const job of jobs) blurRect(ctx, job.x, job.y, job.w, job.h, blurAmt);
+          }
+        }, "shade_model_base");
+        refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
+        return {
+          ok: true,
+          undo_label: "shade_model_base",
+          textured: list.length,
+          faces: jobs.length
+        };
+      }
+    );
+  }
+
+  // src/paint/pack-uv.ts
+  function boxUVFootprint(cube) {
+    const w = Math.max(1, Math.ceil(Math.abs(cube.to[0] - cube.from[0])));
+    const h = Math.max(1, Math.ceil(Math.abs(cube.to[1] - cube.from[1])));
+    const d = Math.max(1, Math.ceil(Math.abs(cube.to[2] - cube.from[2])));
+    return { w: 2 * (w + d), h: h + d };
+  }
+  function packBoxUv(opts) {
+    requireProject();
+    const list = opts.cubes && opts.cubes.length > 0 ? opts.cubes.map((n) => requireCube(n)) : [...Cube.all];
+    if (list.length === 0) {
+      throw new CommandError("E_NOT_FOUND", "No cubes to pack UV.");
+    }
+    const pad = opts.padding ?? 1;
+    const Project2 = globalThis.Project;
+    let texW = Project2?.texture_width ?? 64;
+    let texH = Project2?.texture_height ?? 64;
+    const host = getHost();
+    return host.undo.run({ elements: list, uv_only: true }, "pack_box_uv", () => {
+      const items = list.map((c) => ({ c, f: boxUVFootprint(c) })).sort((a, b) => b.f.h - a.f.h);
+      let x = 0;
+      let y = 0;
+      let rowH = 0;
+      let maxX = 0;
+      for (const it of items) {
+        if (x + it.f.w + pad > texW && x > 0) {
+          x = 0;
+          y += rowH + pad;
+          rowH = 0;
+        }
+        it.c.box_uv = true;
+        it.c.uv_offset = [x, y];
+        it.c.autouv = 0;
+        it.c.mapAutoUV?.();
+        x += it.f.w + pad;
+        rowH = Math.max(rowH, it.f.h);
+        maxX = Math.max(maxX, x);
+      }
+      const usedH = y + rowH;
+      const used = [maxX, usedH];
+      if (opts.auto_resize !== false) {
+        const needW = Math.max(texW, maxX);
+        const needH = Math.max(texH, usedH);
+        if (needW !== texW || needH !== texH) {
+          texW = needW;
+          texH = needH;
+          if (Project2) {
+            Project2.texture_width = texW;
+            Project2.texture_height = texH;
+          }
+          const tex = host.textures.defaultOrFirst();
+          tex?.edit((ctx, canvas) => {
+            if (canvas.width >= texW && canvas.height >= texH) return;
+            const prev = document.createElement("canvas");
+            prev.width = canvas.width;
+            prev.height = canvas.height;
+            prev.getContext("2d")?.drawImage(canvas, 0, 0);
+            canvas.width = Math.max(canvas.width, texW);
+            canvas.height = Math.max(canvas.height, texH);
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(prev, 0, 0);
+          }, "pack_box_uv resize");
+        }
+      }
+      refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
+      return {
+        ok: true,
+        undo_label: "pack_box_uv",
+        packed: items.length,
+        used,
+        texture_size: [texW, texH]
+      };
+    });
+  }
+
   // src/paint/face-feature.ts
   function autoUvCubes(opts) {
     requireProject();
@@ -6853,57 +7324,6 @@ ${payload}`);
       refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
       return { ok: true, undo_label: "auto_uv_cubes", updated };
     });
-  }
-  function paintFaceFeature(opts) {
-    requireProject();
-    const cube = requireCube(opts.cube);
-    const face = cube.faces?.[opts.face];
-    if (!face) {
-      throw new CommandError("E_INVALID_PARAM", `Face not found: ${opts.face}`);
-    }
-    const host = getHost();
-    const tex = (opts.texture ? host.textures.find(opts.texture) : void 0) ?? host.textures.defaultOrFirst();
-    if (!tex) throw new CommandError("E_NOT_FOUND", "No texture available");
-    const uv = face.uv ?? [0, 0, 16, 16];
-    const originX = Math.min(uv[0], uv[2]);
-    const originY = Math.min(uv[1], uv[3]);
-    return host.undo.run(
-      { textures: [], bitmap: true, uv_only: true },
-      "paint_face_feature",
-      (track) => {
-        track.addTextures([tex]);
-        tex.applyToCube(cube.uuid, [opts.face]);
-        tex.edit((ctx) => {
-          const x = originX + opts.x;
-          const y = originY + opts.y;
-          ctx.fillStyle = opts.color;
-          if (opts.feature === "fill") {
-            ctx.fillRect(
-              originX,
-              originY,
-              Math.abs(uv[2] - uv[0]),
-              Math.abs(uv[3] - uv[1])
-            );
-          } else if (opts.feature === "rect") {
-            ctx.fillRect(x, y, opts.width, opts.height);
-          } else {
-            ctx.beginPath();
-            ctx.ellipse(
-              x + opts.width / 2,
-              y + opts.height / 2,
-              opts.width / 2,
-              opts.height / 2,
-              0,
-              0,
-              Math.PI * 2
-            );
-            ctx.fill();
-          }
-        }, "paint_face_feature");
-        refreshView([{ uuid: cube.uuid, name: cube.name }]);
-        return { ok: true, undo_label: "paint_face_feature" };
-      }
-    );
   }
 
   // src/geometry/mirror.ts
@@ -7122,10 +7542,18 @@ Only this folder will be writable/readable by AI tools.`
         }
         case "auto_uv_cubes":
           return autoUvCubes(params ?? {});
+        case "pack_box_uv":
+          return packBoxUv(params ?? {});
+        case "shade_model_base":
+          return shadeModelBase(params ?? {});
         case "mirror_elements":
           return mirrorElements(params ?? {});
         case "paint_face_feature":
           return paintFaceFeature(params ?? {});
+        case "paint_face_features":
+          return paintFaceFeatures(params ?? {});
+        case "get_texture":
+          return getTexture(params ?? {});
         case "upsert_animation":
           return upsertAnimation(params ?? {});
         case "propose_scoped_directory":
@@ -7161,16 +7589,22 @@ Only this folder will be writable/readable by AI tools.`
   }
   function attachImages(base, result) {
     if (!result || typeof result !== "object") return base;
-    const views = result.views;
-    if (!Array.isArray(views)) return base;
     const images = [];
-    for (const v of views) {
-      if (!v || typeof v !== "object") continue;
-      const dataUrl = v.data_url;
-      if (!dataUrl?.startsWith("data:")) continue;
-      const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
-      if (!m) continue;
-      images.push({ type: "image", data: m[2], mimeType: m[1] });
+    const views = result.views;
+    if (Array.isArray(views)) {
+      for (const v of views) {
+        if (!v || typeof v !== "object") continue;
+        const dataUrl = v.data_url;
+        if (!dataUrl?.startsWith("data:")) continue;
+        const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+        if (!m) continue;
+        images.push({ type: "image", data: m[2], mimeType: m[1] });
+      }
+    }
+    const sheet = result.data_url;
+    if (typeof sheet === "string" && sheet.startsWith("data:")) {
+      const m = /^data:([^;]+);base64,(.+)$/.exec(sheet);
+      if (m) images.push({ type: "image", data: m[2], mimeType: m[1] });
     }
     if (!images.length) return base;
     return { ...base, content: [...base.content, ...images] };
@@ -7235,7 +7669,7 @@ Only this folder will be writable/readable by AI tools.`
     try {
       const result = await dispatchCommand(session2, name, parsed.data);
       const base = envelope(true, `OK: ${name}`, result);
-      return name === "capture_views" ? attachImages(base, result) : base;
+      return name === "capture_views" || name === "get_texture" ? attachImages(base, result) : base;
     } catch (err) {
       const error = err && typeof err === "object" && "payload" in err ? err.payload : toErrorPayload(err);
       return envelope(false, error.message, void 0, error);

@@ -47,7 +47,6 @@ function wrap(tex: BbTexture): TextureHandle {
         tex.updateChangesAfterEdit?.();
         return;
       }
-      // Fallback: direct canvas
       const canvas = tex.canvas;
       const ctx = canvas?.getContext("2d") ?? tex.ctx;
       if (!canvas || !ctx) {
@@ -63,6 +62,25 @@ function wrap(tex: BbTexture): TextureHandle {
       const cube = Cube?.all.find((c) => c.uuid === cubeUuid);
       if (!cube) throw new CommandError("E_NOT_FOUND", `Cube ${cubeUuid}`);
       cube.applyTexture(tex, faces);
+    },
+    toDataURL(maxEdge = 256) {
+      const src =
+        tex.canvas ??
+        (() => {
+          throw new CommandError("E_BLOCKBENCH_ERROR", "Texture has no canvas for export");
+        })();
+      const w = src.width || tex.width;
+      const h = src.height || tex.height;
+      const scale = Math.min(1, maxEdge / Math.max(w, h, 1));
+      if (scale >= 0.999) return src.toDataURL("image/png");
+      const out = document.createElement("canvas");
+      out.width = Math.max(1, Math.round(w * scale));
+      out.height = Math.max(1, Math.round(h * scale));
+      const ctx = out.getContext("2d");
+      if (!ctx) throw new CommandError("E_BLOCKBENCH_ERROR", "No 2d context");
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(src, 0, 0, out.width, out.height);
+      return out.toDataURL("image/png");
     },
   };
 }

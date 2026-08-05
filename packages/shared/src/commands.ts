@@ -15,6 +15,12 @@ import {
   scaffoldBipedParamsSchema,
   upsertAnimationParamsSchema,
 } from "./contracts-extra.js";
+import {
+  getTextureParamsSchema,
+  packBoxUvParamsSchema,
+  paintFaceFeaturesParamsSchema,
+  shadeModelBaseParamsSchema,
+} from "./contracts-texture.js";
 
 export interface CommandSpec<P extends z.ZodType = z.ZodType> {
   description: string;
@@ -85,9 +91,21 @@ export const COMMAND_SPECS = {
     params: ensureTextureParamsSchema,
   },
   auto_uv_cubes: {
-    description: "Box-UV (or face) map named cubes / all cubes.",
+    description: "Box-UV (or face) map named cubes / all cubes. Prefer pack_box_uv for unique islands.",
     mutates: true,
     params: autoUvCubesParamsSchema,
+  },
+  pack_box_uv: {
+    description:
+      "Shelf-pack box UVs so cubes do not share pixels. Call BEFORE shade_model_base / paint. auto_resize grows atlas if needed.",
+    mutates: true,
+    params: packBoxUvParamsSchema,
+  },
+  shade_model_base: {
+    description:
+      "BEST texture base: assign texture, region colors by name regex, soft face lighting + mottle + blur (sosadly-style). Then paint features.",
+    mutates: true,
+    params: shadeModelBaseParamsSchema,
   },
   mirror_elements: {
     description: "Mirror named groups/cubes across an axis with smart rename.",
@@ -95,9 +113,20 @@ export const COMMAND_SPECS = {
     params: mirrorElementsParamsSchema,
   },
   paint_face_feature: {
-    description: "Paint rect/ellipse/fill in face-local UV space (eyes, trim). Not raw brushes.",
+    description: "Paint one rect/ellipse/fill in face-local UV space. Prefer paint_face_features for batches.",
     mutates: true,
     params: paintFaceFeatureParamsSchema,
+  },
+  paint_face_features: {
+    description:
+      "Batch face-local paint ops (fill/rect/ellipse/line) in ONE undo — eyes, mouth, trim across many faces.",
+    mutates: true,
+    params: paintFaceFeaturesParamsSchema,
+  },
+  get_texture: {
+    description: "Inspect the texture sheet as a compact PNG data_url (default max_edge 256).",
+    mutates: false,
+    params: getTextureParamsSchema,
   },
   upsert_animation: {
     description: "Create/replace a simple bone animation clip (rotation/position keys).",

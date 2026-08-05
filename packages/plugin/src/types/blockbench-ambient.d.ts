@@ -76,6 +76,7 @@ declare class Cube {
   box_uv?: boolean;
   autouv?: number;
   mirror_uv?: boolean;
+  uv_offset?: number[];
   constructor(data?: Record<string, unknown>);
   addTo: (parent?: Group | "root") => Cube;
   init: () => Cube;

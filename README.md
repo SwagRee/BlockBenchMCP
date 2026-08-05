@@ -61,7 +61,7 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 2. `create_project`
 3. 实体：`scaffold_biped`／方块：`apply_geometry_batch`
 4. 修完 error 再贴图
-5. `auto_uv_cubes` → `paint_face_feature`
+5. `pack_box_uv` → `shade_model_base` → `paint_face_features`
 6. 需要时再 `capture_views`
 
 ### 许可证

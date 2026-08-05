@@ -45,16 +45,22 @@ function attachImages(
   result: unknown,
 ): { content: Content; isError?: boolean } {
   if (!result || typeof result !== "object") return base;
-  const views = (result as { views?: unknown }).views;
-  if (!Array.isArray(views)) return base;
   const images: Content = [];
-  for (const v of views) {
-    if (!v || typeof v !== "object") continue;
-    const dataUrl = (v as { data_url?: string }).data_url;
-    if (!dataUrl?.startsWith("data:")) continue;
-    const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
-    if (!m) continue;
-    images.push({ type: "image", data: m[2], mimeType: m[1] });
+  const views = (result as { views?: unknown }).views;
+  if (Array.isArray(views)) {
+    for (const v of views) {
+      if (!v || typeof v !== "object") continue;
+      const dataUrl = (v as { data_url?: string }).data_url;
+      if (!dataUrl?.startsWith("data:")) continue;
+      const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+      if (!m) continue;
+      images.push({ type: "image", data: m[2], mimeType: m[1] });
+    }
+  }
+  const sheet = (result as { data_url?: string }).data_url;
+  if (typeof sheet === "string" && sheet.startsWith("data:")) {
+    const m = /^data:([^;]+);base64,(.+)$/.exec(sheet);
+    if (m) images.push({ type: "image", data: m[2], mimeType: m[1] });
   }
   if (!images.length) return base;
   return { ...base, content: [...base.content, ...images] };
@@ -137,7 +143,9 @@ async function callTool(
   try {
     const result = await dispatchCommand(session, name, parsed.data);
     const base = envelope(true, `OK: ${name}`, result);
-    return name === "capture_views" ? attachImages(base, result) : base;
+    return name === "capture_views" || name === "get_texture"
+      ? attachImages(base, result)
+      : base;
   } catch (err) {
     const error =
       err && typeof err === "object" && "payload" in err
