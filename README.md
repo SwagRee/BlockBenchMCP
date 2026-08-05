@@ -1,9 +1,6 @@
 # BlockBenchMCP
 
-**English** | [简体中文](README.zh-CN.md)
-
-> GitHub README cannot run JavaScript, so file links above will navigate.  
-> For **in-page show/hide** (no jump): **[Docs site language toggle](https://swagree.github.io/BlockBenchMCP/)**
+[**中文 / English — 本页显隐切换**](https://swagree.github.io/BlockBenchMCP/)
 
 Minecraft-oriented **[Model Context Protocol](https://modelcontextprotocol.io/)** bridge for [Blockbench](https://www.blockbench.net/) desktop **≥ 5.1.0**.
 
