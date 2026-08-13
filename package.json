@@ -1,7 +1,7 @@
 {
   "name": "blockbench-mcp",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Minecraft-oriented BlockBench MCP — pure desktop plugin (in-process HTTP MCP)",
   "type": "module",
   "workspaces": [

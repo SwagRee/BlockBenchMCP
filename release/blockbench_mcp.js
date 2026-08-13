@@ -5095,7 +5095,7 @@
   }
 
   // ../shared/dist/index.js
-  var PLUGIN_VERSION = "0.6.0";
+  var PLUGIN_VERSION = "0.6.1";
 
   // src/config.ts
   function readPluginConfig() {
@@ -6732,7 +6732,8 @@ ${payload}`);
   // src/host/texture-port.ts
   function textureApi() {
     const T = globalThis.Texture;
-    if (!T) throw new CommandError("E_BLOCKBENCH_ERROR", "Texture API unavailable");
+    if (!T)
+      throw new CommandError("E_BLOCKBENCH_ERROR", "Texture API unavailable");
     return T;
   }
   function wrap(tex) {
@@ -6743,20 +6744,29 @@ ${payload}`);
       height: tex.height,
       edit(paint, editName) {
         if (typeof tex.edit === "function") {
-          tex.edit((canvas2) => {
-            const ctx2 = canvas2.getContext("2d") ?? tex.ctx;
-            if (!ctx2) {
-              throw new CommandError("E_BLOCKBENCH_ERROR", "Texture canvas has no 2d context");
-            }
-            paint(ctx2, canvas2);
-          }, { edit_name: editName });
+          tex.edit(
+            (canvas2) => {
+              const ctx2 = canvas2.getContext("2d") ?? tex.ctx;
+              if (!ctx2) {
+                throw new CommandError(
+                  "E_BLOCKBENCH_ERROR",
+                  "Texture canvas has no 2d context"
+                );
+              }
+              paint(ctx2, canvas2);
+            },
+            { edit_name: editName }
+          );
           tex.updateChangesAfterEdit?.();
           return;
         }
         const canvas = tex.canvas;
         const ctx = canvas?.getContext("2d") ?? tex.ctx;
         if (!canvas || !ctx) {
-          throw new CommandError("E_BLOCKBENCH_ERROR", "Texture.edit unavailable");
+          throw new CommandError(
+            "E_BLOCKBENCH_ERROR",
+            "Texture.edit unavailable"
+          );
         }
         paint(ctx, canvas);
         tex.updateChangesAfterEdit?.();
@@ -6769,7 +6779,10 @@ ${payload}`);
       },
       toDataURL(maxEdge = 256) {
         const src = tex.canvas ?? (() => {
-          throw new CommandError("E_BLOCKBENCH_ERROR", "Texture has no canvas for export");
+          throw new CommandError(
+            "E_BLOCKBENCH_ERROR",
+            "Texture has no canvas for export"
+          );
         })();
         const w = src.width || tex.width;
         const h = src.height || tex.height;
