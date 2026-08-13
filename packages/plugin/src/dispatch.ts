@@ -45,6 +45,9 @@ import {
   transformTextureRegion,
 } from "./paint/texture-ops.js";
 import { auditTextureQuality } from "./paint/texture-quality.js";
+import { transformElements } from "./geometry/transform.js";
+import { arrayCubes } from "./geometry/array.js";
+import { auditSymmetry, measureModel } from "./geometry/measure.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 import {
@@ -73,6 +76,10 @@ export async function dispatchCommand(
         return buildProjectSummary();
       case "get_elements":
         return getElements((params ?? {}) as never);
+      case "measure_model":
+        return measureModel((params ?? {}) as never);
+      case "audit_symmetry":
+        return auditSymmetry((params ?? {}) as never);
       case "list_textures":
         return { textures: listTextures() };
       case "list_animations":
@@ -110,6 +117,10 @@ export async function dispatchCommand(
         return applyGeometryBatch((params ?? {}) as never);
       case "update_elements":
         return updateElements((params ?? {}) as never);
+      case "transform_elements":
+        return transformElements((params ?? {}) as never);
+      case "array_cubes":
+        return arrayCubes((params ?? {}) as never);
       case "create_limb": {
         const r = createLimb((params ?? {}) as never);
         return { ok: true, undo_label: "create_limb", ...r };

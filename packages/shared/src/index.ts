@@ -81,6 +81,10 @@ export {
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
+  transformElementsParamsSchema,
+  arrayCubesParamsSchema,
+  measureModelParamsSchema,
+  auditSymmetryParamsSchema,
 } from "./contracts-management.js";
 
 export { resolveGuide } from "./guide-resolve.js";
@@ -108,4 +112,4 @@ export type { CapabilityId } from "./capabilities.js";
 export { UV_MODES, uvModeSchema, resolveUvModeFromHints } from "./uv-mode.js";
 export type { UvMode } from "./uv-mode.js";
 
-export const PLUGIN_VERSION = "0.4.0";
+export const PLUGIN_VERSION = "0.5.0";

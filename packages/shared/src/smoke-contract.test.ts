@@ -17,6 +17,7 @@ describe("generation smoke contract", () => {
       "create_project",
       "scaffold_biped",
       "check_model",
+      "measure_model",
       "ensure_texture",
       "pack_box_uv",
       "get_uv_layout",
@@ -40,6 +41,9 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("apply_geometry_batch"));
     assert.ok(COMMAND_NAMES.includes("paint_face_feature"));
     assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
+    assert.ok(COMMAND_NAMES.includes("transform_elements"));
+    assert.ok(COMMAND_NAMES.includes("array_cubes"));
+    assert.ok(COMMAND_NAMES.includes("audit_symmetry"));
     assert.ok(COMMAND_NAMES.includes("resize_texture"));
     assert.ok(COMMAND_NAMES.includes("edit_texture_pixels"));
     assert.ok(COMMAND_NAMES.includes("replace_texture_color"));

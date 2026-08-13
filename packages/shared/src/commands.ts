@@ -45,6 +45,10 @@ import {
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
+  transformElementsParamsSchema,
+  arrayCubesParamsSchema,
+  measureModelParamsSchema,
+  auditSymmetryParamsSchema,
 } from "./contracts-management.js";
 
 export interface CommandSpec<P extends z.ZodType = z.ZodType> {
@@ -73,6 +77,18 @@ export const COMMAND_SPECS = {
       "Read exact cube/group geometry, hierarchy, visibility, UV rectangles, rotations, and texture references.",
     mutates: false,
     params: getElementsParamsSchema,
+  },
+  measure_model: {
+    description:
+      "Measure model or subtree bounds, size, center, cube count, and summed volume.",
+    mutates: false,
+    params: measureModelParamsSchema,
+  },
+  audit_symmetry: {
+    description:
+      "Compare explicit left/right cube or group pairs across an axis and report coordinate error.",
+    mutates: false,
+    params: auditSymmetryParamsSchema,
   },
   list_textures: {
     description:
@@ -139,6 +155,18 @@ export const COMMAND_SPECS = {
       "Batch rename, transform, resize, reparent, or show/hide existing cubes and groups in ONE undo.",
     mutates: true,
     params: updateElementsParamsSchema,
+  },
+  transform_elements: {
+    description:
+      "Translate, scale, and rotate multiple cubes/groups around one pivot in a single undo.",
+    mutates: true,
+    params: transformElementsParamsSchema,
+  },
+  array_cubes: {
+    description:
+      "Create a bounded linear array of cubes with shared or auto-remapped UVs in one undo.",
+    mutates: true,
+    params: arrayCubesParamsSchema,
   },
   create_limb: {
     description:

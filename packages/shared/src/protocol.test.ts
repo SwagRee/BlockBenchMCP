@@ -35,6 +35,10 @@ import {
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
+  transformElementsParamsSchema,
+  arrayCubesParamsSchema,
+  measureModelParamsSchema,
+  auditSymmetryParamsSchema,
   upsertAnimationParamsSchema,
   resolveGuide,
   scaffoldBipedParamsSchema,
@@ -316,6 +320,50 @@ describe("management schemas", () => {
         entries: [
           { cube: "head", face: "north", uv: [0, 0, 8, 8], rotation: 45 },
         ],
+      }),
+    );
+  });
+});
+
+describe("iterative modeling schemas", () => {
+  it("supports relative transforms, arrays, measurement, symmetry, and UV policy", () => {
+    transformElementsParamsSchema.parse({
+      refs: ["arm_left", "arm_right"],
+      translate: [0, 1, 0],
+      scale: [1, 1.1, 1],
+      pivot: [0, 12, 0],
+      rotate: [0, 0, 5],
+      uv_policy: "auto",
+    });
+    arrayCubesParamsSchema.parse({
+      sources: ["tooth"],
+      count: 8,
+      offset: [1, 0, 0],
+      name_pattern: "{name}_{index}",
+      uv_policy: "share",
+    });
+    measureModelParamsSchema.parse({ refs: ["body"] });
+    auditSymmetryParamsSchema.parse({
+      pairs: [{ left: "arm_left", right: "arm_right" }],
+      axis: "x",
+      pivot: 0,
+      tolerance: 0.01,
+    });
+    updateElementsParamsSchema.parse({
+      updates: [{ ref: "head", to: [4, 32, 4] }],
+      uv_policy: "preserve",
+    });
+  });
+
+  it("rejects no-op transforms and unsafe array sizes", () => {
+    assert.throws(() =>
+      transformElementsParamsSchema.parse({ refs: ["head"] }),
+    );
+    assert.throws(() =>
+      arrayCubesParamsSchema.parse({
+        sources: ["tooth"],
+        count: 129,
+        offset: [1, 0, 0],
       }),
     );
   });

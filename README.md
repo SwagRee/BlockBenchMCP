@@ -72,7 +72,7 @@ Security: loopback only; Bearer required; file export needs `propose_scoped_dire
 | Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                                                                                                                                                                                                                             |
 | Review       | `check_model`, `capture_views` (native MCP image previews)                                                                                                                                                                                                                                                                                                                               |
 | Project      | `create_project`, `set_project_meta`                                                                                                                                                                                                                                                                                                                                                     |
-| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `create_limb`, `mirror_elements`                                                                                                                                                                                                                                                                                            |
+| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `transform_elements`, `array_cubes`, `measure_model`, `audit_symmetry`, `create_limb`, `mirror_elements`                                                                                                                                                                                                                    |
 | UV & texture | `ensure_texture`, `pack_box_uv`, `get_uv_layout`, `get_uv_map`, `paint_face_grid`, `get_face_grid`, `get_texture_revision`, `edit_texture_pixels`, `flood_fill_texture`, `transform_texture_region`, `replace_texture_color`, `copy_face_pixels`, `analyze_texture_palette`, `audit_texture_quality`, `get_texture_region`, `resize_texture`, `import_texture_png`, `export_texture_png` |
 | Animation    | `upsert_animation`, `list_animations`, `delete_animation`                                                                                                                                                                                                                                                                                                                                |
 | Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                                                                                                                                                                                                                               |
@@ -83,6 +83,13 @@ The safe edit loop is complete: inspect exact element geometry and per-face UVs 
 `get_elements`, make bounded changes with `update_elements` / `set_face_uv`, then read
 back and review. `save_project` writes a real `.bbmodel`; `export_model` compiles through
 the active format codec. Both require an approved scoped directory and explicit overwrite.
+
+Iterative modeling no longer requires recomputing every absolute coordinate:
+`transform_elements` applies relative translation, scaling, and pivoted rotation;
+`array_cubes` builds repeated geometry while explicitly sharing or regenerating UVs.
+`measure_model` reports overall or subtree bounds, center, size, cube count, and volume,
+while `audit_symmetry` reports left/right coordinate error. Dimension changes can choose
+`uv_policy: preserve|auto`; re-check the UV layout before painting.
 
 ## Workflow
 

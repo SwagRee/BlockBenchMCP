@@ -72,7 +72,7 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 | 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                                                                                                                                                                                                                             |
 | 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                                                                                                                                                                                                                                      |
 | 项目      | `create_project`、`set_project_meta`                                                                                                                                                                                                                                                                                                                                                     |
-| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                                                                                                                                                                                                                            |
+| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`transform_elements`、`array_cubes`、`measure_model`、`audit_symmetry`、`create_limb`、`mirror_elements`                                                                                                                                                                                                                    |
 | UV 与贴图 | `ensure_texture`、`pack_box_uv`、`get_uv_layout`、`get_uv_map`、`paint_face_grid`、`get_face_grid`、`get_texture_revision`、`edit_texture_pixels`、`flood_fill_texture`、`transform_texture_region`、`replace_texture_color`、`copy_face_pixels`、`analyze_texture_palette`、`audit_texture_quality`、`get_texture_region`、`resize_texture`、`import_texture_png`、`export_texture_png` |
 | 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                                                                                                                                                                                                                                |
 | 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                                                                                                                                                                                                                               |
@@ -83,6 +83,11 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 `update_elements` / `set_face_uv` 负责有边界的精修，然后可再次读取和预览确认。
 `save_project` 会写出真实 `.bbmodel`，`export_model` 会调用当前格式的 Codec 编译；
 两者都必须先确认会话目录，覆盖已有文件时必须显式传入 `overwrite: true`。
+
+迭代建模不再需要手工重算全部绝对坐标：`transform_elements` 可执行相对平移、缩放和绕枢轴旋转；
+`array_cubes` 用于重复结构，并明确选择共享或重新生成 UV。`measure_model` 返回整体或子树边界、中心、
+尺寸、方块数和体积，`audit_symmetry` 返回左右配对的坐标误差。尺寸变化可选择
+`uv_policy: preserve|auto`，绘制前应重新检查 UV 布局。
 
 ## 推荐出模流程
 

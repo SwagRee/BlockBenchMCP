@@ -25,6 +25,54 @@ export const updateElementsParamsSchema = z
   .object({
     updates: z.array(elementUpdateSchema).min(1).max(256),
     undo_label: z.string().min(1).optional(),
+    /** preserve keeps current UVs; auto remaps cubes whose dimensions changed. */
+    uv_policy: z.enum(["preserve", "auto"]).optional(),
+  })
+  .strict();
+
+export const transformElementsParamsSchema = z
+  .object({
+    refs: z.array(z.string().min(1)).min(1).max(256),
+    translate: vec3Schema.optional(),
+    scale: vec3Schema.optional(),
+    pivot: vec3Schema.optional(),
+    rotate: vec3Schema.optional(),
+    uv_policy: z.enum(["preserve", "auto"]).optional(),
+    undo_label: z.string().min(1).optional(),
+  })
+  .strict()
+  .refine((value) => value.translate || value.scale || value.rotate, {
+    message: "Provide translate, scale, or rotate",
+  });
+
+export const arrayCubesParamsSchema = z
+  .object({
+    sources: z.array(z.string().min(1)).min(1).max(64),
+    count: z.number().int().min(1).max(128),
+    offset: vec3Schema,
+    name_pattern: z.string().min(1).optional(),
+    uv_policy: z.enum(["share", "auto"]).optional(),
+    parent: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const measureModelParamsSchema = z
+  .object({ refs: z.array(z.string().min(1)).max(256).optional() })
+  .strict();
+
+export const auditSymmetryParamsSchema = z
+  .object({
+    pairs: z
+      .array(
+        z
+          .object({ left: z.string().min(1), right: z.string().min(1) })
+          .strict(),
+      )
+      .min(1)
+      .max(128),
+    axis: z.enum(["x", "y", "z"]).optional(),
+    pivot: z.number().optional(),
+    tolerance: z.number().nonnegative().max(16).optional(),
   })
   .strict();
 

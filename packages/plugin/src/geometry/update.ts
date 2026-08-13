@@ -34,6 +34,7 @@ function isDescendant(candidate: Group, ancestor: Group): boolean {
 export function updateElements(opts: {
   updates: Update[];
   undo_label?: string;
+  uv_policy?: "preserve" | "auto";
 }): { ok: true; undo_label: string; updated: string[] } {
   requireProject();
   const resolved = opts.updates.map((update) => {
@@ -74,9 +75,15 @@ export function updateElements(opts: {
           update.visibility;
       }
       if (element instanceof Cube) {
+        const dimensionsChanged =
+          update.from !== undefined || update.to !== undefined;
         if (update.from !== undefined) element.from = [...update.from];
         if (update.to !== undefined) element.to = [...update.to];
         if (update.inflate !== undefined) element.inflate = update.inflate;
+        if (dimensionsChanged && opts.uv_policy === "auto") {
+          element.autouv = 1;
+          element.mapAutoUV?.();
+        }
       }
       if (parent !== undefined) element.addTo(parent);
     }

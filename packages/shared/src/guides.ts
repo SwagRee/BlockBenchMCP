@@ -6,8 +6,10 @@ export const GUIDE_MODELING = `
 1. get_guide(modeling) then create_project(format).
 2. Entities: scaffold_biped FIRST (correct pivots). Blocks: apply_geometry_batch.
 3. check_model immediately. Fix every error before texturing.
-4. Texturing: pack_box_uv → shade_model_base → paint_face_features. (scaffold_biped already packs in the project UV mode.)
-5. capture_views only after check_model is clean (max_edge 256).
+4. Use measure_model instead of hand-calculating extents. Use transform_elements for relative edits and array_cubes for bounded repeated geometry; audit_symmetry for explicit left/right pairs.
+5. When cube dimensions change, choose uv_policy preserve or auto deliberately. Re-run get_uv_layout before painting.
+6. Texturing: pack_box_uv → shade_model_base → paint_face_features. (scaffold_biped already packs in the project UV mode.)
+7. capture_views only after check_model is clean (max_edge 256).
 
 ## UV mode (do not mix blindly)
 - Read uv_mode from health / get_project_summary first.
