@@ -39,6 +39,14 @@ export const scaffoldBipedParamsSchema = z
   })
   .strict();
 
+const animationKeySchema = z
+  .object({
+    time: z.number().nonnegative(),
+    value: vec3Schema,
+    interpolation: z.enum(["linear", "catmullrom", "step"]).optional(),
+  })
+  .strict();
+
 export const upsertAnimationParamsSchema = z
   .object({
     name: z.string().min(1),
@@ -46,28 +54,13 @@ export const upsertAnimationParamsSchema = z
     loop: z.enum(["once", "hold", "loop"]).optional(),
     bones: z
       .record(
-        z.object({
-          rotation: z
-            .array(
-              z
-                .object({
-                  time: z.number().nonnegative(),
-                  value: vec3Schema,
-                })
-                .strict(),
-            )
-            .optional(),
-          position: z
-            .array(
-              z
-                .object({
-                  time: z.number().nonnegative(),
-                  value: vec3Schema,
-                })
-                .strict(),
-            )
-            .optional(),
-        }).strict(),
+        z
+          .object({
+            rotation: z.array(animationKeySchema).optional(),
+            position: z.array(animationKeySchema).optional(),
+            scale: z.array(animationKeySchema).optional(),
+          })
+          .strict(),
       )
       .optional(),
     replace: z.boolean().optional(),

@@ -37,14 +37,22 @@ export function createUndoPort(): UndoPort {
       const Undo = undoApi();
       const createdEls: BbElementRef[] = [];
       const createdTex: BbElementRef[] = [];
+      const createdAnimations: BbElementRef[] = [];
       const liveEls: unknown[] = [];
       const liveTex: unknown[] = [];
+      const liveAnimations: unknown[] = [];
       // Avoid empty `elements: []` — BB 5.1 can throw getUndoCopy on bad aspect entries.
       const initAspects = { ...aspects };
-      if (Array.isArray(initAspects.elements) && (initAspects.elements as unknown[]).length === 0) {
+      if (
+        Array.isArray(initAspects.elements) &&
+        (initAspects.elements as unknown[]).length === 0
+      ) {
         delete initAspects.elements;
       }
-      if (Array.isArray(initAspects.textures) && (initAspects.textures as unknown[]).length === 0) {
+      if (
+        Array.isArray(initAspects.textures) &&
+        (initAspects.textures as unknown[]).length === 0
+      ) {
         delete initAspects.textures;
       }
       Undo.initEdit(initAspects);
@@ -53,7 +61,12 @@ export function createUndoPort(): UndoPort {
           addElements: (els) => {
             createdEls.push(...els);
             for (const e of els) {
-              if (e && typeof e === "object" && "uuid" in e && "getUndoCopy" in (e as object)) {
+              if (
+                e &&
+                typeof e === "object" &&
+                "uuid" in e &&
+                "getUndoCopy" in (e as object)
+              ) {
                 liveEls.push(e);
               }
             }
@@ -61,8 +74,25 @@ export function createUndoPort(): UndoPort {
           addTextures: (texs) => {
             createdTex.push(...texs);
             for (const t of texs) {
-              if (t && typeof t === "object" && "uuid" in t && "getUndoCopy" in (t as object)) {
+              if (
+                t &&
+                typeof t === "object" &&
+                "uuid" in t &&
+                "getUndoCopy" in (t as object)
+              ) {
                 liveTex.push(t);
+              }
+            }
+          },
+          addAnimations: (animations) => {
+            createdAnimations.push(...animations);
+            for (const animation of animations) {
+              if (
+                animation &&
+                typeof animation === "object" &&
+                "uuid" in animation
+              ) {
+                liveAnimations.push(animation);
               }
             }
           },
@@ -71,10 +101,20 @@ export function createUndoPort(): UndoPort {
         const finish: Record<string, unknown> = { ...initAspects };
         const els = liveEls.length ? liveEls : resolveLive(createdEls);
         const texs = liveTex.length ? liveTex : resolveLiveTextures(createdTex);
+        const animations = liveAnimations.length
+          ? liveAnimations
+          : resolveLiveAnimations(createdAnimations);
         if (els.length) finish.elements = els;
         else delete finish.elements;
         if (texs.length) finish.textures = texs;
         else delete finish.textures;
+        if (animations.length) finish.animations = animations;
+        else if (
+          Array.isArray(finish.animations) &&
+          finish.animations.length === 0
+        ) {
+          delete finish.animations;
+        }
         Undo.finishEdit(label, finish);
         return result;
       } catch (err) {
@@ -90,8 +130,12 @@ export function createUndoPort(): UndoPort {
 }
 
 function resolveLive(refs: BbElementRef[]): unknown[] {
-  const Cube = (globalThis as unknown as { Cube?: { all: Array<{ uuid: string }> } }).Cube;
-  const Group = (globalThis as unknown as { Group?: { all: Array<{ uuid: string }> } }).Group;
+  const Cube = (
+    globalThis as unknown as { Cube?: { all: Array<{ uuid: string }> } }
+  ).Cube;
+  const Group = (
+    globalThis as unknown as { Group?: { all: Array<{ uuid: string }> } }
+  ).Group;
   const out: unknown[] = [];
   for (const r of refs) {
     const hit =
@@ -103,9 +147,26 @@ function resolveLive(refs: BbElementRef[]): unknown[] {
 }
 
 function resolveLiveTextures(refs: BbElementRef[]): unknown[] {
-  const Texture = (globalThis as unknown as { Texture?: { all: Array<{ uuid: string }> } })
-    .Texture;
+  const Texture = (
+    globalThis as unknown as { Texture?: { all: Array<{ uuid: string }> } }
+  ).Texture;
   return refs
     .map((r) => Texture?.all.find((t) => t.uuid === r.uuid))
+    .filter(Boolean) as unknown[];
+}
+
+function resolveLiveAnimations(refs: BbElementRef[]): unknown[] {
+  const Animation = (
+    globalThis as unknown as {
+      Animation?: { all: Array<{ uuid?: string; name: string }> };
+    }
+  ).Animation;
+  return refs
+    .map((ref) =>
+      Animation?.all.find(
+        (animation) =>
+          animation.uuid === ref.uuid || animation.name === ref.name,
+      ),
+    )
     .filter(Boolean) as unknown[];
 }

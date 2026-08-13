@@ -58,6 +58,15 @@ export {
   getTextureParamsSchema,
 } from "./contracts-texture.js";
 
+export {
+  assignTextureParamsSchema,
+  deleteAnimationParamsSchema,
+  getElementsParamsSchema,
+  setFaceUvParamsSchema,
+  setProjectMetaParamsSchema,
+  updateElementsParamsSchema,
+} from "./contracts-management.js";
+
 export { resolveGuide } from "./guide-resolve.js";
 export type { GuideTopic } from "./guide-resolve.js";
 export {
@@ -83,4 +92,4 @@ export type { CapabilityId } from "./capabilities.js";
 export { UV_MODES, uvModeSchema, resolveUvModeFromHints } from "./uv-mode.js";
 export type { UvMode } from "./uv-mode.js";
 
-export const PLUGIN_VERSION = "0.1.4";
+export const PLUGIN_VERSION = "0.2.0";

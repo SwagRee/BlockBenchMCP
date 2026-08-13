@@ -67,14 +67,22 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 
 ## 主要工具
 
-| 类别 | 工具                                                                                                                            |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 观察 | `health`、`get_project_summary`、`check_model`、`capture_views`（原生 MCP 图片预览）、`get_guide`                               |
-| 几何 | `create_project`、`scaffold_biped`、`apply_geometry_batch`、`create_limb`、`mirror_elements`                                    |
-| 贴图 | `ensure_texture`、`pack_box_uv`、`shade_model_base`、`paint_face_features`、`paint_pixel_batch`、`get_texture`、`auto_uv_cubes` |
-| 导出 | `propose_scoped_directory`、`export_model`、`upsert_animation`                                                                  |
+| 类别      | 工具                                                                                                                                                                              |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                      |
+| 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                               |
+| 项目      | `create_project`、`set_project_meta`                                                                                                                                              |
+| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                     |
+| UV 与贴图 | `ensure_texture`、`list_textures`、`assign_texture`、`auto_uv_cubes`、`pack_box_uv`、`set_face_uv`、`shade_model_base`、`paint_face_features`、`paint_pixel_batch`、`get_texture` |
+| 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                         |
+| 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                        |
 
 突变工具显式返回成功/失败；未知参数硬报错，不静默丢弃。优先 `check_model`，少刷截图。
+
+现在已经补齐安全的“读取—修改—复查”闭环：`get_elements` 可读回精确几何和逐面 UV，
+`update_elements` / `set_face_uv` 负责有边界的精修，然后可再次读取和预览确认。
+`save_project` 会写出真实 `.bbmodel`，`export_model` 会调用当前格式的 Codec 编译；
+两者都必须先确认会话目录，覆盖已有文件时必须显式传入 `overwrite: true`。
 
 ## 推荐出模流程
 

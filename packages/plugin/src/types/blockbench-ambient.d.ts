@@ -34,14 +34,26 @@ declare const Formats: Record<
   }
 >;
 
-declare const Project: {
-  name?: string;
-  texture_width?: number;
-  texture_height?: number;
-  box_uv?: boolean;
-} | undefined;
+declare const Project:
+  | {
+      name?: string;
+      geometry_name?: string;
+      texture_width?: number;
+      texture_height?: number;
+      box_uv?: boolean;
+    }
+  | undefined;
 
-declare const Format: { id?: string; name?: string; box_uv?: boolean } | undefined;
+declare const Format:
+  | {
+      id?: string;
+      name?: string;
+      box_uv?: boolean;
+      codec?: { compile?: () => unknown };
+    }
+  | undefined;
+
+declare const Codecs: Record<string, { compile?: () => unknown }> | undefined;
 
 declare const Undo: {
   initEdit: (aspects: Record<string, unknown>) => void;
@@ -53,6 +65,7 @@ declare class Group {
   name: string;
   origin: number[];
   rotation: number[];
+  visibility?: boolean;
   children: Array<Group | Cube>;
   parent?: Group | "root" | string;
   constructor(data?: Record<string, unknown>);
@@ -72,7 +85,11 @@ declare class Cube {
   rotation: number[];
   inflate: number;
   parent?: Group | "root" | string;
-  faces: Record<string, { texture?: unknown; uv?: number[] }>;
+  faces: Record<
+    string,
+    { texture?: unknown; uv?: number[]; rotation?: number }
+  >;
+  visibility?: boolean;
   box_uv?: boolean;
   autouv?: number;
   mirror_uv?: boolean;
@@ -101,7 +118,8 @@ declare class Texture {
   static getDefault?: () => Texture | undefined;
 }
 
-declare const TextureAnimator: { isPlaying?: boolean; start?: () => void } | undefined;
+declare const TextureAnimator:
+  { isPlaying?: boolean; start?: () => void } | undefined;
 
 declare const Outliner: {
   root: Array<Group | Cube>;
@@ -130,12 +148,21 @@ declare const Screencam: {
   ) => void;
 };
 
-declare const DefaultCameraPresets: Array<Record<string, unknown> & { id?: string }>;
+declare const DefaultCameraPresets: Array<
+  Record<string, unknown> & { id?: string }
+>;
 
-declare const Animation: {
-  all: Array<{ name: string; length?: number; loop?: string; animators?: unknown }>;
-  selected?: unknown;
-} | undefined;
+declare const Animation:
+  | {
+      all: Array<{
+        name: string;
+        length?: number;
+        loop?: string;
+        animators?: unknown;
+      }>;
+      selected?: unknown;
+    }
+  | undefined;
 
 interface PluginData {
   name?: string;

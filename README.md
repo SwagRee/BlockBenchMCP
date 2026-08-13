@@ -67,14 +67,22 @@ Security: loopback only; Bearer required; file export needs `propose_scoped_dire
 
 ## Main tools
 
-| Area     | Tools                                                                                                                           |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Observe  | `health`, `get_project_summary`, `check_model`, `capture_views` (native MCP image previews), `get_guide`                        |
-| Geometry | `create_project`, `scaffold_biped`, `apply_geometry_batch`, `create_limb`, `mirror_elements`                                    |
-| Texture  | `ensure_texture`, `pack_box_uv`, `shade_model_base`, `paint_face_features`, `paint_pixel_batch`, `get_texture`, `auto_uv_cubes` |
-| Export   | `propose_scoped_directory`, `export_model`, `upsert_animation`                                                                  |
+| Area         | Tools                                                                                                                                                                             |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                      |
+| Review       | `check_model`, `capture_views` (native MCP image previews)                                                                                                                        |
+| Project      | `create_project`, `set_project_meta`                                                                                                                                              |
+| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `create_limb`, `mirror_elements`                                                                                     |
+| UV & texture | `ensure_texture`, `list_textures`, `assign_texture`, `auto_uv_cubes`, `pack_box_uv`, `set_face_uv`, `shade_model_base`, `paint_face_features`, `paint_pixel_batch`, `get_texture` |
+| Animation    | `upsert_animation`, `list_animations`, `delete_animation`                                                                                                                         |
+| Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                        |
 
 Mutations return explicit success/failure; unknown params hard-error. Prefer `check_model` over vision spam.
+
+The safe edit loop is complete: inspect exact element geometry and per-face UVs with
+`get_elements`, make bounded changes with `update_elements` / `set_face_uv`, then read
+back and review. `save_project` writes a real `.bbmodel`; `export_model` compiles through
+the active format codec. Both require an approved scoped directory and explicit overwrite.
 
 ## Workflow
 

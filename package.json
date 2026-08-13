@@ -1,7 +1,7 @@
 {
   "name": "blockbench-mcp",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Minecraft-oriented BlockBench MCP — pure desktop plugin (in-process HTTP MCP)",
   "type": "module",
   "workspaces": [
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/plugin",
-    "typecheck": "npm run typecheck -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/plugin",
+    "typecheck": "npm run build -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/plugin",
     "test": "npm run test -w @blockbench-mcp/shared"
   },
   "engines": {

@@ -7,7 +7,7 @@ export function runCheckModel(): CheckModelResult {
   const findings: CheckModelResult["findings"] = [];
 
   for (const g of Group.all) {
-    const childCount = (g.children?.length ?? 0);
+    const childCount = g.children?.length ?? 0;
     if (childCount === 0) {
       findings.push({
         severity: "error",
@@ -52,6 +52,27 @@ export function runCheckModel(): CheckModelResult {
         message: `Cube "${cube.name}" has ${untextured.length} untextured face(s).`,
       });
     }
+    const textureWidth = Project?.texture_width ?? 16;
+    const textureHeight = Project?.texture_height ?? 16;
+    const uvOutside = Object.entries(cube.faces ?? {}).filter(([, face]) => {
+      const uv = face?.uv;
+      return (
+        Array.isArray(uv) &&
+        uv.length >= 4 &&
+        (Math.min(uv[0], uv[2]) < 0 ||
+          Math.min(uv[1], uv[3]) < 0 ||
+          Math.max(uv[0], uv[2]) > textureWidth ||
+          Math.max(uv[1], uv[3]) > textureHeight)
+      );
+    });
+    if (uvOutside.length > 0) {
+      findings.push({
+        severity: "error",
+        code: "UV_OUT_OF_BOUNDS",
+        element: cube.name,
+        message: `Cube "${cube.name}" has ${uvOutside.length} face UV(s) outside ${textureWidth}×${textureHeight}.`,
+      });
+    }
     // Pivot far from geometry (group origin vs cube center)
     const parent = cube.parent;
     if (parent && parent !== "root" && typeof parent !== "string") {
@@ -76,15 +97,18 @@ export function runCheckModel(): CheckModelResult {
       const inter =
         Math.max(
           0,
-          Math.min(a.box.max[0], b.box.max[0]) - Math.max(a.box.min[0], b.box.min[0]),
+          Math.min(a.box.max[0], b.box.max[0]) -
+            Math.max(a.box.min[0], b.box.min[0]),
         ) *
         Math.max(
           0,
-          Math.min(a.box.max[1], b.box.max[1]) - Math.max(a.box.min[1], b.box.min[1]),
+          Math.min(a.box.max[1], b.box.max[1]) -
+            Math.max(a.box.min[1], b.box.min[1]),
         ) *
         Math.max(
           0,
-          Math.min(a.box.max[2], b.box.max[2]) - Math.max(a.box.min[2], b.box.min[2]),
+          Math.min(a.box.max[2], b.box.max[2]) -
+            Math.max(a.box.min[2], b.box.min[2]),
         );
       const smaller = Math.min(volume(a.box), volume(b.box));
       if (smaller > 0 && inter / smaller > 0.35) {

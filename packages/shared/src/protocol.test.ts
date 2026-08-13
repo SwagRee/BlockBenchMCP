@@ -15,6 +15,10 @@ import {
   makeError,
   mutationResultSchema,
   paintPixelBatchParamsSchema,
+  setFaceUvParamsSchema,
+  setProjectMetaParamsSchema,
+  updateElementsParamsSchema,
+  upsertAnimationParamsSchema,
   resolveGuide,
   scaffoldBipedParamsSchema,
 } from "./index.js";
@@ -144,6 +148,55 @@ describe("geometry schemas", () => {
       mirror: "x",
     });
     scaffoldBipedParamsSchema.parse({ scale: 1, texture_size: 64 });
+  });
+});
+
+describe("management schemas", () => {
+  it("supports exact read-modify-write geometry and UV payloads", () => {
+    updateElementsParamsSchema.parse({
+      updates: [
+        {
+          ref: "head",
+          from: [-4, 24, -4],
+          to: [4, 32, 4],
+          parent: "body",
+          visibility: true,
+        },
+      ],
+    });
+    setFaceUvParamsSchema.parse({
+      entries: [
+        { cube: "head", face: "north", uv: [8, 8, 16, 16], rotation: 90 },
+      ],
+    });
+  });
+
+  it("rejects empty metadata changes and invalid UV rotations", () => {
+    assert.throws(() => setProjectMetaParamsSchema.parse({}));
+    assert.throws(() =>
+      setFaceUvParamsSchema.parse({
+        entries: [
+          { cube: "head", face: "north", uv: [0, 0, 8, 8], rotation: 45 },
+        ],
+      }),
+    );
+  });
+});
+
+describe("animation schema", () => {
+  it("supports scale and interpolation controls", () => {
+    upsertAnimationParamsSchema.parse({
+      name: "animation.test.idle",
+      length: 1,
+      bones: {
+        body: {
+          scale: [
+            { time: 0, value: [1, 1, 1], interpolation: "step" },
+            { time: 1, value: [1, 1.05, 1], interpolation: "catmullrom" },
+          ],
+        },
+      },
+    });
   });
 });
 

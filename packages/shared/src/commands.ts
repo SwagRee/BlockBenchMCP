@@ -22,6 +22,14 @@ import {
   paintPixelBatchParamsSchema,
   shadeModelBaseParamsSchema,
 } from "./contracts-texture.js";
+import {
+  assignTextureParamsSchema,
+  deleteAnimationParamsSchema,
+  getElementsParamsSchema,
+  setFaceUvParamsSchema,
+  setProjectMetaParamsSchema,
+  updateElementsParamsSchema,
+} from "./contracts-management.js";
 
 export interface CommandSpec<P extends z.ZodType = z.ZodType> {
   description: string;
@@ -31,12 +39,35 @@ export interface CommandSpec<P extends z.ZodType = z.ZodType> {
 }
 
 export const COMMAND_SPECS = {
+  list_formats: {
+    description:
+      "List model formats currently registered in Blockbench, including plugin formats.",
+    mutates: false,
+    params: z.object({}).strict(),
+  },
   get_project_summary: {
     description:
       "Compact outliner + counts. Prefer over screenshots for situational awareness.",
     mutates: false,
     params: z.object({}).strict(),
     result: projectSummarySchema,
+  },
+  get_elements: {
+    description:
+      "Read exact cube/group geometry, hierarchy, visibility, UV rectangles, rotations, and texture references.",
+    mutates: false,
+    params: getElementsParamsSchema,
+  },
+  list_textures: {
+    description:
+      "List project textures with UUID, name, and bitmap dimensions.",
+    mutates: false,
+    params: z.object({}).strict(),
+  },
+  list_animations: {
+    description: "List project animations with name, length, and loop mode.",
+    mutates: false,
+    params: z.object({}).strict(),
   },
   check_model: {
     description:
@@ -75,11 +106,23 @@ export const COMMAND_SPECS = {
     mutates: true,
     params: createProjectParamsSchema,
   },
+  set_project_meta: {
+    description:
+      "Update project name, geometry identifier, or texture resolution in one undo.",
+    mutates: true,
+    params: setProjectMetaParamsSchema,
+  },
   apply_geometry_batch: {
     description:
       "Create/delete groups+cubes in ONE undo. All-or-nothing. Prefer for multi-part shapes.",
     mutates: true,
     params: applyGeometryBatchParamsSchema,
+  },
+  update_elements: {
+    description:
+      "Batch rename, transform, resize, reparent, or show/hide existing cubes and groups in ONE undo.",
+    mutates: true,
+    params: updateElementsParamsSchema,
   },
   create_limb: {
     description:
@@ -104,6 +147,12 @@ export const COMMAND_SPECS = {
       "Auto-UV cubes. mode auto|box|face (default auto from Project/Format: java_block→face, Bedrock→box). Prefer pack_box_uv for unique islands.",
     mutates: true,
     params: autoUvCubesParamsSchema,
+  },
+  set_face_uv: {
+    description:
+      "Set exact per-face UV rectangles and optional quarter-turn rotation for multiple cube faces in ONE undo.",
+    mutates: true,
+    params: setFaceUvParamsSchema,
   },
   pack_box_uv: {
     description:
@@ -146,11 +195,22 @@ export const COMMAND_SPECS = {
     mutates: false,
     params: getTextureParamsSchema,
   },
+  assign_texture: {
+    description:
+      "Assign an existing texture to cubes, optionally limited to selected faces, in ONE undo.",
+    mutates: true,
+    params: assignTextureParamsSchema,
+  },
   upsert_animation: {
     description:
-      "Create/replace a simple bone animation clip (rotation/position keys).",
+      "Create/replace a real bone animation clip with rotation/position/scale keys and linear/catmullrom/step interpolation.",
     mutates: true,
     params: upsertAnimationParamsSchema,
+  },
+  delete_animation: {
+    description: "Delete one animation by name in a single undo step.",
+    mutates: true,
+    params: deleteAnimationParamsSchema,
   },
   propose_scoped_directory: {
     description:
@@ -158,10 +218,24 @@ export const COMMAND_SPECS = {
     mutates: false,
     params: z.object({ path: z.string().min(1) }).strict(),
   },
+  save_project: {
+    description:
+      "Compile the open project as a real .bbmodel inside the confirmed scoped directory. overwrite must be explicit.",
+    mutates: true,
+    params: z
+      .object({
+        path: z
+          .string()
+          .min(1)
+          .regex(/\.bbmodel$/i, "path must end in .bbmodel"),
+        overwrite: z.boolean().optional(),
+      })
+      .strict(),
+  },
   export_model: {
     description:
-      "Save/export project into scoped directory. overwrite must be explicit.",
-    mutates: false,
+      "Compile the open model through its active format codec into the confirmed scoped directory. overwrite must be explicit.",
+    mutates: true,
     params: z
       .object({
         path: z.string().min(1),

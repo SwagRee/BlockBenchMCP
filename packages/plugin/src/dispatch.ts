@@ -20,11 +20,24 @@ import { mirrorElements } from "./geometry/mirror.js";
 import {
   proposeScopedDirectory,
   exportModel,
+  saveProject,
 } from "./commands/scope-export.js";
 import { upsertAnimation } from "./commands/animation.js";
 import { paintPixelBatch } from "./paint/pixel-batch.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
+import {
+  getElements,
+  listAnimations,
+  listFormats,
+  listTextures,
+} from "./bb/inspect.js";
+import { setFaceUv, updateElements } from "./geometry/update.js";
+import {
+  assignTexture,
+  deleteAnimation,
+  setProjectMeta,
+} from "./commands/management.js";
 
 export async function dispatchCommand(
   session: SessionState,
@@ -33,8 +46,16 @@ export async function dispatchCommand(
 ): Promise<unknown> {
   try {
     switch (command) {
+      case "list_formats":
+        return { formats: listFormats() };
       case "get_project_summary":
         return buildProjectSummary();
+      case "get_elements":
+        return getElements((params ?? {}) as never);
+      case "list_textures":
+        return { textures: listTextures() };
+      case "list_animations":
+        return { animations: listAnimations() };
       case "check_model":
         return runCheckModel();
       case "capture_views":
@@ -62,8 +83,12 @@ export async function dispatchCommand(
         const r = createProject(p);
         return { ok: true, undo_label: `create_project ${p.format}`, ...r };
       }
+      case "set_project_meta":
+        return setProjectMeta((params ?? {}) as never);
       case "apply_geometry_batch":
         return applyGeometryBatch((params ?? {}) as never);
+      case "update_elements":
+        return updateElements((params ?? {}) as never);
       case "create_limb": {
         const r = createLimb((params ?? {}) as never);
         return { ok: true, undo_label: "create_limb", ...r };
@@ -76,6 +101,8 @@ export async function dispatchCommand(
       }
       case "auto_uv_cubes":
         return autoUvCubes((params ?? {}) as never);
+      case "set_face_uv":
+        return setFaceUv((params ?? {}) as never);
       case "pack_box_uv":
         return packBoxUv((params ?? {}) as never);
       case "shade_model_base":
@@ -90,8 +117,12 @@ export async function dispatchCommand(
         return paintPixelBatch((params ?? {}) as never);
       case "get_texture":
         return getTexture((params ?? {}) as never);
+      case "assign_texture":
+        return assignTexture((params ?? {}) as never);
       case "upsert_animation":
         return upsertAnimation((params ?? {}) as never);
+      case "delete_animation":
+        return deleteAnimation((params ?? {}) as never);
       case "propose_scoped_directory":
         return proposeScopedDirectory(
           session,
@@ -99,6 +130,8 @@ export async function dispatchCommand(
         );
       case "export_model":
         return exportModel(session, (params ?? {}) as never);
+      case "save_project":
+        return saveProject(session, (params ?? {}) as never);
       default:
         requireProject();
         throw Object.assign(new Error(`Unsupported command: ${command}`), {

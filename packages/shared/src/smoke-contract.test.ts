@@ -34,6 +34,24 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
   });
 
+  it("exposes a complete safe read-modify-manage loop", () => {
+    for (const name of [
+      "list_formats",
+      "get_elements",
+      "update_elements",
+      "set_face_uv",
+      "list_textures",
+      "assign_texture",
+      "set_project_meta",
+      "list_animations",
+      "delete_animation",
+      "save_project",
+      "export_model",
+    ] as const) {
+      assert.equal(isCommandName(name), true, name);
+    }
+  });
+
   it("texturing guide prefers pack + shade before features", () => {
     const g = resolveGuide("texturing");
     assert.match(g.text, /pack_box_uv/i);

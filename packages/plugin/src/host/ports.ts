@@ -20,6 +20,8 @@ export interface UndoTrack {
   addElements: (els: BbElementRef[]) => void;
   /** Register textures created in this edit. */
   addTextures: (texs: BbElementRef[]) => void;
+  /** Register animations created or replacing prior clips. */
+  addAnimations: (animations: BbElementRef[]) => void;
 }
 
 export interface TextureHandle extends BbElementRef {

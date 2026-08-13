@@ -6,14 +6,19 @@ import {
   errorPayloadSchema,
   vec3Schema,
 } from "./protocol-base.js";
+import { capabilitiesSchema } from "./capabilities.js";
 
 /** Compact observation — prefer over screenshots. */
 export const projectSummarySchema = z
   .object({
     format: z.string(),
     name: z.string().optional(),
+    geometry_name: z.string().optional(),
+    texture_width: z.number().int().positive().optional(),
+    texture_height: z.number().int().positive().optional(),
     /** Resolved UV strategy for this project (box vs per-face). */
     uv_mode: z.enum(["box", "face"]).optional(),
+    capabilities: capabilitiesSchema.optional(),
     cubes: z.number().int().nonnegative(),
     groups: z.number().int().nonnegative(),
     textures: z.number().int().nonnegative(),
@@ -210,6 +215,7 @@ export const healthResultSchema = z
     blockbench_version: z.string(),
     format: z.string().nullable(),
     uv_mode: z.enum(["box", "face"]).optional(),
+    capabilities: capabilitiesSchema.optional(),
     mode: z.literal("in-process"),
   })
   .strict();

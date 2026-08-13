@@ -16,6 +16,7 @@ import { toErrorPayload } from "../errors.js";
 import { bbBlockbench } from "../bb/globals.js";
 import { currentFormatId } from "../bb/elements.js";
 import { resolveUvMode } from "../paint/uv-mode.js";
+import { getHost } from "../host/live.js";
 
 type Content = Array<
   | { type: "text"; text: string }
@@ -129,6 +130,7 @@ async function callTool(
       blockbench_version: bbBlockbench().version ?? "unknown",
       format: currentFormatId() ?? null,
       uv_mode: resolveUvMode({ cubes: [...Cube.all] }),
+      capabilities: getHost().probeCapabilities(),
       mode: "in-process",
     });
   }

@@ -37,6 +37,10 @@ export function buildProjectSummary(): ProjectSummary {
   return {
     format: currentFormatId() ?? "unknown",
     name: Project?.name,
+    geometry_name: (Project as typeof Project & { geometry_name?: string })
+      ?.geometry_name,
+    texture_width: Project?.texture_width,
+    texture_height: Project?.texture_height,
     uv_mode: resolveUvMode({ cubes: [...Cube.all] }),
     cubes: Cube.all.length,
     groups: Group.all.length,
