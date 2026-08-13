@@ -70,6 +70,10 @@ export const shadeModelBaseParamsSchema = z
     noise: z.number().min(0).max(1).optional(),
     blur: z.number().min(0).max(1).optional(),
     edge_darken: z.number().min(0).max(1).optional(),
+    /** Reproducible pseudo-random mottle seed. */
+    seed: z.number().int().optional(),
+    /** Crisp disables gradients and blur for strict pixel art. */
+    crisp: z.boolean().optional(),
   })
   .strict();
 
@@ -149,5 +153,125 @@ export const getTextureParamsSchema = z
     texture: z.string().optional(),
     /** Longest edge cap for returned image (default 256). */
     max_edge: z.number().int().positive().max(1024).optional(),
+  })
+  .strict();
+
+const faceTargetSchema = z
+  .object({
+    cube: z.string().min(1),
+    face: faceEnum,
+  })
+  .strict();
+
+export const paintFaceGridParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    faces: z
+      .array(
+        faceTargetSchema.extend({
+          /** One Unicode code point per face-local texel. */
+          rows: z.array(z.string()).min(1).max(4096),
+        }),
+      )
+      .min(1)
+      .max(256),
+    /** Symbol to CSS color; null means exact transparent erase. */
+    palette: z.record(z.string(), z.string().min(1).nullable()),
+  })
+  .strict();
+
+export const getFaceGridParamsSchema = faceTargetSchema
+  .extend({ texture: z.string().optional() })
+  .strict();
+
+export const editTexturePixelsParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    face: faceTargetSchema.optional(),
+    pixels: z
+      .array(
+        z
+          .object({
+            x: z.number().int().nonnegative(),
+            y: z.number().int().nonnegative(),
+            color: z.string().min(1).nullable(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(16384),
+  })
+  .strict();
+
+export const replaceTextureColorParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    face: faceTargetSchema.optional(),
+    from: z.string().min(1),
+    to: z.string().min(1).nullable(),
+    tolerance: z.number().int().min(0).max(255).optional(),
+  })
+  .strict();
+
+export const copyFacePixelsParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    source: faceTargetSchema,
+    target: faceTargetSchema,
+    flip_x: z.boolean().optional(),
+    flip_y: z.boolean().optional(),
+    rotation: z.enum(["0", "90", "180", "270"]).optional(),
+  })
+  .strict();
+
+export const analyzeTexturePaletteParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    face: faceTargetSchema.optional(),
+    max_colors: z.number().int().positive().max(256).optional(),
+  })
+  .strict();
+
+export const getTextureRegionParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    face: faceTargetSchema.optional(),
+    rect: z
+      .tuple([
+        z.number().int().nonnegative(),
+        z.number().int().nonnegative(),
+        z.number().int().positive(),
+        z.number().int().positive(),
+      ])
+      .optional(),
+    scale: z.number().int().positive().max(64).optional(),
+    grid: z.boolean().optional(),
+    checkerboard: z.boolean().optional(),
+  })
+  .strict()
+  .refine((value) => !(value.face && value.rect), {
+    message: "Choose face or rect, not both",
+  });
+
+export const importTexturePngParamsSchema = z
+  .object({
+    path: z
+      .string()
+      .min(1)
+      .regex(/\.png$/i, "path must end in .png"),
+    texture: z.string().optional(),
+    name: z.string().min(1).optional(),
+    resize_project: z.boolean().optional(),
+  })
+  .strict();
+
+export const exportTexturePngParamsSchema = z
+  .object({
+    path: z
+      .string()
+      .min(1)
+      .regex(/\.png$/i, "path must end in .png"),
+    texture: z.string().optional(),
+    overwrite: z.boolean().optional(),
   })
   .strict();

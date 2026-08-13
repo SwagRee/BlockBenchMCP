@@ -19,6 +19,15 @@ import {
   getUvLayoutParamsSchema,
   getUvMapParamsSchema,
   resizeTextureParamsSchema,
+  paintFaceGridParamsSchema,
+  getFaceGridParamsSchema,
+  editTexturePixelsParamsSchema,
+  replaceTextureColorParamsSchema,
+  copyFacePixelsParamsSchema,
+  analyzeTexturePaletteParamsSchema,
+  getTextureRegionParamsSchema,
+  importTexturePngParamsSchema,
+  exportTexturePngParamsSchema,
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
@@ -160,6 +169,54 @@ describe("UV atlas contracts", () => {
       resizeTextureParamsSchema.parse({ width: 0, height: 64 }),
     );
     assert.throws(() => getUvLayoutParamsSchema.parse({ arbitrary: true }));
+  });
+});
+
+describe("precision texture contracts", () => {
+  it("supports exact grids, RGBA edits, transforms, palette analysis, and zoom", () => {
+    paintFaceGridParamsSchema.parse({
+      faces: [{ cube: "head", face: "north", rows: ["ab", "ba"] }],
+      palette: { a: "#ff000080", b: null },
+    });
+    getFaceGridParamsSchema.parse({ cube: "head", face: "north" });
+    editTexturePixelsParamsSchema.parse({
+      face: { cube: "head", face: "north" },
+      pixels: [{ x: 0, y: 0, color: null }],
+    });
+    replaceTextureColorParamsSchema.parse({
+      from: "#ff0000",
+      to: "#00ff00",
+      tolerance: 4,
+    });
+    copyFacePixelsParamsSchema.parse({
+      source: { cube: "arm_left", face: "north" },
+      target: { cube: "arm_right", face: "north" },
+      flip_x: true,
+      rotation: "0",
+    });
+    analyzeTexturePaletteParamsSchema.parse({ max_colors: 16 });
+    getTextureRegionParamsSchema.parse({
+      rect: [0, 0, 8, 8],
+      scale: 16,
+      grid: true,
+    });
+  });
+
+  it("keeps PNG IO scoped and rejects ambiguous previews", () => {
+    importTexturePngParamsSchema.parse({ path: "C:\\safe\\skin.png" });
+    exportTexturePngParamsSchema.parse({
+      path: "C:\\safe\\skin.png",
+      overwrite: true,
+    });
+    assert.throws(() =>
+      importTexturePngParamsSchema.parse({ path: "skin.jpg" }),
+    );
+    assert.throws(() =>
+      getTextureRegionParamsSchema.parse({
+        face: { cube: "head", face: "north" },
+        rect: [0, 0, 8, 8],
+      }),
+    );
   });
 });
 

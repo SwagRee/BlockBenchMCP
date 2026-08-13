@@ -41,6 +41,8 @@ export function shadeModelBase(opts: {
   noise?: number;
   blur?: number;
   edge_darken?: number;
+  seed?: number;
+  crisp?: boolean;
 }): {
   ok: true;
   undo_label: string;
@@ -73,6 +75,11 @@ export function shadeModelBase(opts: {
   const topLight = opts.top_light ?? 0.12;
   const bottomDark = opts.bottom_dark ?? 0.22;
   const edgeDark = opts.edge_darken ?? 0;
+  let randomState = (opts.seed ?? 0x9e3779b9) >>> 0;
+  const random = () => {
+    randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
+    return randomState / 0x100000000;
+  };
   const faceMul: Record<string, number> = {
     up: 1 + topLight,
     down: 1 - bottomDark,
@@ -114,10 +121,14 @@ export function shadeModelBase(opts: {
       tex.edit((ctx) => {
         ctx.imageSmoothingEnabled = false;
         for (const job of jobs) {
-          const g = ctx.createLinearGradient(0, job.y, 0, job.y + job.h);
-          g.addColorStop(0, shadeHex(job.base, job.mul * 1.1));
-          g.addColorStop(1, shadeHex(job.base, job.mul * 0.84));
-          ctx.fillStyle = g;
+          if (opts.crisp === true) {
+            ctx.fillStyle = shadeHex(job.base, job.mul);
+          } else {
+            const g = ctx.createLinearGradient(0, job.y, 0, job.y + job.h);
+            g.addColorStop(0, shadeHex(job.base, job.mul * 1.1));
+            g.addColorStop(1, shadeHex(job.base, job.mul * 0.84));
+            ctx.fillStyle = g;
+          }
           ctx.fillRect(job.x, job.y, job.w, job.h);
           if (edgeDark > 0 && job.w > 2 && job.h > 2) {
             ctx.fillStyle = shadeHex(job.base, job.mul * (1 - edgeDark));
@@ -131,17 +142,22 @@ export function shadeModelBase(opts: {
           for (const job of jobs) {
             const count = Math.max(1, Math.floor(job.w * job.h * 0.1));
             for (let i = 0; i < count; i++) {
-              const px = job.x + ((Math.random() * job.w) | 0);
-              const py = job.y + ((Math.random() * job.h) | 0);
+              const px = job.x + ((random() * job.w) | 0);
+              const py = job.y + ((random() * job.h) | 0);
               ctx.fillStyle = shadeHex(
                 job.base,
-                job.mul * (1 - mottle + Math.random() * mottle * 2),
+                job.mul * (1 - mottle + random() * mottle * 2),
               );
-              ctx.fillRect(px, py, 1, Math.random() < 0.5 ? 2 : 1);
+              ctx.fillRect(
+                px,
+                py,
+                1,
+                opts.crisp === true || random() < 0.5 ? 1 : 2,
+              );
             }
           }
         }
-        if (blurAmt > 0) {
+        if (blurAmt > 0 && opts.crisp !== true) {
           for (const job of jobs)
             blurRect(ctx, job.x, job.y, job.w, job.h, blurAmt);
         }

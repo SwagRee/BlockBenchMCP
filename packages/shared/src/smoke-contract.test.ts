@@ -21,6 +21,10 @@ describe("generation smoke contract", () => {
       "pack_box_uv",
       "get_uv_layout",
       "get_uv_map",
+      "get_face_grid",
+      "paint_face_grid",
+      "analyze_texture_palette",
+      "get_texture_region",
       "shade_model_base",
       "paint_face_features",
       "paint_pixel_batch",
@@ -35,6 +39,11 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("paint_face_feature"));
     assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
     assert.ok(COMMAND_NAMES.includes("resize_texture"));
+    assert.ok(COMMAND_NAMES.includes("edit_texture_pixels"));
+    assert.ok(COMMAND_NAMES.includes("replace_texture_color"));
+    assert.ok(COMMAND_NAMES.includes("copy_face_pixels"));
+    assert.ok(COMMAND_NAMES.includes("import_texture_png"));
+    assert.ok(COMMAND_NAMES.includes("export_texture_png"));
   });
 
   it("exposes a complete safe read-modify-manage loop", () => {

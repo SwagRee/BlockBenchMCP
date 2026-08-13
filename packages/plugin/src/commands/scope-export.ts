@@ -4,6 +4,7 @@ import { requireProject } from "../bb/elements.js";
 
 type FsApi = {
   existsSync: (path: string) => boolean;
+  readFileSync: (path: string) => Uint8Array;
   writeFileSync: (
     path: string,
     data: string | ArrayBuffer | Uint8Array,
@@ -30,7 +31,7 @@ function requireModule<T>(name: string): T {
 
 function fsApi(): FsApi {
   const fs = requireModule<Partial<FsApi>>("fs");
-  if (!fs?.existsSync || !fs.writeFileSync) {
+  if (!fs?.existsSync || !fs.readFileSync || !fs.writeFileSync) {
     throw new CommandError(
       "E_BLOCKBENCH_ERROR",
       "Filesystem not available (use Blockbench desktop app).",
@@ -39,7 +40,7 @@ function fsApi(): FsApi {
   return fs as FsApi;
 }
 
-function scopedTarget(session: SessionState, path: string): string {
+export function scopedTarget(session: SessionState, path: string): string {
   if (!session.scopedDirectory) {
     throw new CommandError(
       "E_SCOPE_DENIED",
@@ -68,6 +69,35 @@ function scopedTarget(session: SessionState, path: string): string {
     );
   }
   return target;
+}
+
+export function readScopedBinary(
+  session: SessionState,
+  path: string,
+): Uint8Array {
+  const target = scopedTarget(session, path);
+  const fs = fsApi();
+  if (!fs.existsSync(target))
+    throw new CommandError("E_NOT_FOUND", `File not found: ${target}`);
+  return fs.readFileSync(target);
+}
+
+export function writeScopedBinary(
+  session: SessionState,
+  path: string,
+  data: Uint8Array,
+  overwrite?: boolean,
+): { path: string; bytes: number } {
+  const target = scopedTarget(session, path);
+  const fs = fsApi();
+  if (fs.existsSync(target) && overwrite !== true) {
+    throw new CommandError(
+      "E_SCOPE_DENIED",
+      "File exists; pass overwrite:true",
+    );
+  }
+  fs.writeFileSync(target, data);
+  return { path: target, bytes: data.byteLength };
 }
 
 function serialize(content: unknown): string | ArrayBuffer | Uint8Array {

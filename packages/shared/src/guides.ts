@@ -34,10 +34,11 @@ export const GUIDE_TEXTURING = `
 1. ensure_texture (64 entities / 16 blocks), then pack_box_uv. Subset packing preserves other islands by default; auto-resize uses power-of-two atlases.
 2. get_uv_layout before painting. Require summary.out_of_bounds=0 and review every overlap; compare density across related faces.
 3. get_uv_map to visually verify island placement, face orientation, flips, and rotation.
-4. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
-5. paint_face_features for accents; paint_pixel_batch for crisp brush paths. Both use face-local coordinates and honor rotated/flipped UVs.
-6. get_texture + get_uv_map, then capture_views. Fix gaps and re-check_model for UNTEXTURED_FACE.
-7. Palette 4–8 colors. Never paint before the UV layout passes inspection. Use resize_texture when atlas and UVs must scale together.
+4. Author exact face-sized palette grids with paint_face_grid; use get_face_grid for lossless read-modify-write. null palette entries erase to transparent.
+5. Use paint_face_features / paint_pixel_batch for accents, edit_texture_pixels for surgical RGBA edits, replace_texture_color for palette revisions, and copy_face_pixels for mirrored parts.
+6. Run analyze_texture_palette. Prefer 4–8 intentional colors and a 60–80% stable material base. For a generated base, shade_model_base(seed, crisp:true) is deterministic.
+7. Inspect get_texture_region(face, scale:8+, grid:true), get_uv_map, and model views. Fix gaps and re-check_model.
+8. PNG import/export requires propose_scoped_directory and stays inside that user-approved folder. Use resize_texture when bitmap and UVs must scale together.
 `.trim();
 
 export const GUIDE_ANIMATION = `

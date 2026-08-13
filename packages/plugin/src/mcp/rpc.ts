@@ -163,7 +163,8 @@ async function callTool(
     const hasImages =
       name === "capture_views" ||
       name === "get_texture" ||
-      name === "get_uv_map";
+      name === "get_uv_map" ||
+      name === "get_texture_region";
     const base = envelope(
       true,
       `OK: ${name}`,

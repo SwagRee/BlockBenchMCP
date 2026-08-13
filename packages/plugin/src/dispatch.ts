@@ -27,6 +27,18 @@ import {
 import { upsertAnimation } from "./commands/animation.js";
 import { paintPixelBatch } from "./paint/pixel-batch.js";
 import { resizeTexture } from "./texture/resize.js";
+import {
+  copyFacePixels,
+  editTexturePixels,
+  getFaceGrid,
+  paintFaceGrid,
+  replaceTextureColor,
+} from "./paint/texture-pixels.js";
+import {
+  analyzeTexturePalette,
+  getTextureRegion,
+} from "./paint/texture-inspect.js";
+import { exportTexturePng, importTexturePng } from "./texture/png-io.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 import {
@@ -108,6 +120,12 @@ export async function dispatchCommand(
         return getUvLayout((params ?? {}) as never);
       case "get_uv_map":
         return await getUvMap((params ?? {}) as never);
+      case "get_face_grid":
+        return await getFaceGrid((params ?? {}) as never);
+      case "get_texture_region":
+        return await getTextureRegion((params ?? {}) as never);
+      case "analyze_texture_palette":
+        return await analyzeTexturePalette((params ?? {}) as never);
       case "set_face_uv":
         return setFaceUv((params ?? {}) as never);
       case "pack_box_uv":
@@ -124,6 +142,18 @@ export async function dispatchCommand(
         return paintFaceFeatures((params ?? {}) as never);
       case "paint_pixel_batch":
         return paintPixelBatch((params ?? {}) as never);
+      case "paint_face_grid":
+        return paintFaceGrid((params ?? {}) as never);
+      case "edit_texture_pixels":
+        return editTexturePixels((params ?? {}) as never);
+      case "replace_texture_color":
+        return replaceTextureColor((params ?? {}) as never);
+      case "copy_face_pixels":
+        return await copyFacePixels((params ?? {}) as never);
+      case "import_texture_png":
+        return await importTexturePng(session, (params ?? {}) as never);
+      case "export_texture_png":
+        return exportTexturePng(session, (params ?? {}) as never);
       case "get_texture":
         return getTexture((params ?? {}) as never);
       case "assign_texture":

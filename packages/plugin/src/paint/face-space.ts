@@ -39,6 +39,22 @@ function rotate(
   return [u, v];
 }
 
+export function faceLocalToAtlas(
+  space: FaceSpace,
+  x: number,
+  y: number,
+): [number, number] {
+  const [u, v] = rotate(
+    (x + 0.5) / space.width,
+    (y + 0.5) / space.height,
+    space.rotation,
+  );
+  return [
+    Math.floor(space.uv[0] + (space.uv[2] - space.uv[0]) * u),
+    Math.floor(space.uv[1] + (space.uv[3] - space.uv[1]) * v),
+  ];
+}
+
 function atlasPoint(space: FaceSpace, x: number, y: number): [number, number] {
   const [u, v] = rotate(x / space.width, y / space.height, space.rotation);
   return [

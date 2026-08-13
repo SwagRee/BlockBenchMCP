@@ -24,6 +24,15 @@ import {
   paintPixelBatchParamsSchema,
   resizeTextureParamsSchema,
   shadeModelBaseParamsSchema,
+  paintFaceGridParamsSchema,
+  getFaceGridParamsSchema,
+  editTexturePixelsParamsSchema,
+  replaceTextureColorParamsSchema,
+  copyFacePixelsParamsSchema,
+  analyzeTexturePaletteParamsSchema,
+  getTextureRegionParamsSchema,
+  importTexturePngParamsSchema,
+  exportTexturePngParamsSchema,
 } from "./contracts-texture.js";
 import {
   assignTextureParamsSchema,
@@ -163,6 +172,24 @@ export const COMMAND_SPECS = {
     mutates: false,
     params: getUvMapParamsSchema,
   },
+  get_face_grid: {
+    description:
+      "Read exact face-local texels as RGBA rows while honoring rotated and flipped UVs.",
+    mutates: false,
+    params: getFaceGridParamsSchema,
+  },
+  get_texture_region: {
+    description:
+      "Return a nearest-neighbor zoom of one face or atlas region with checkerboard and pixel grid.",
+    mutates: false,
+    params: getTextureRegionParamsSchema,
+  },
+  analyze_texture_palette: {
+    description:
+      "Count exact RGBA colors and transparency for a texture or one face.",
+    mutates: false,
+    params: analyzeTexturePaletteParamsSchema,
+  },
   set_face_uv: {
     description:
       "Set exact per-face UV rectangles and optional quarter-turn rotation for multiple cube faces in ONE undo.",
@@ -209,6 +236,42 @@ export const COMMAND_SPECS = {
       "Batch pixel brush paths in face-local UV space. Square/circle brushes, clipped to each face by default, in ONE undo.",
     mutates: true,
     params: paintPixelBatchParamsSchema,
+  },
+  paint_face_grid: {
+    description:
+      "Write palette-indexed face-sized texel grids exactly, including transparent erase, in one undo.",
+    mutates: true,
+    params: paintFaceGridParamsSchema,
+  },
+  edit_texture_pixels: {
+    description:
+      "Set or erase exact atlas or face-local RGBA pixels in one undo.",
+    mutates: true,
+    params: editTexturePixelsParamsSchema,
+  },
+  replace_texture_color: {
+    description:
+      "Replace or erase a color globally or on one face with bounded RGBA tolerance.",
+    mutates: true,
+    params: replaceTextureColorParamsSchema,
+  },
+  copy_face_pixels: {
+    description:
+      "Copy face pixels to another face with optional mirror and quarter-turn rotation.",
+    mutates: true,
+    params: copyFacePixelsParamsSchema,
+  },
+  import_texture_png: {
+    description:
+      "Import a PNG only from the user-approved scoped directory into a texture.",
+    mutates: true,
+    params: importTexturePngParamsSchema,
+  },
+  export_texture_png: {
+    description:
+      "Export a texture as original-resolution PNG inside the user-approved scoped directory.",
+    mutates: true,
+    params: exportTexturePngParamsSchema,
   },
   get_texture: {
     description:
