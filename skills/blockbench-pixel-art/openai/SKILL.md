@@ -16,6 +16,9 @@ Create Blockbench models with deliberate geometry and texture decisions. Treat e
    - **Original design:** write a compact design contract covering silhouette, proportions, materials, palette, light direction, and detail density before building.
 4. Inspect the live Blockbench project and available MCP tools. Call the modeling guide before creating entity geometry and the texturing guide before painting.
 5. Block out geometry and verify the silhouette from at least two useful views before texturing.
+   Before accepting the blockout, run the mandatory z-fighting gate in
+   [references/pixel-art-rules.md](references/pixel-art-rules.md). A clean preview is not
+   evidence that coincident faces are safe.
 6. Pack UVs before painting. Give every visible face unique texel space unless intentional sharing is documented.
 7. Write texture faces as palette-indexed grids. Compile them with `scripts/compile_texture_plan.py`; do not improvise large paint rectangles during fragile pixel work.
 8. Apply the texture plan, run `check_model`, and capture a useful preview.
@@ -36,6 +39,10 @@ Create Blockbench models with deliberate geometry and texture decisions. Treat e
 - For transparent materials, verify both silhouette visibility and interior transparency. Read the glass rules in [references/pixel-art-rules.md](references/pixel-art-rules.md).
 - Never substitute an external texture for an original-design request. External images may be analyzed as references, but the applied grid must be authored for the current UV layout.
 - Preserve the user's existing project unless replacement is explicitly authorized. Use separate undoable batches and report unsaved state.
+- Reject geometry with coincident exposed faces. Surface decoration must be painted into
+  the supporting face or offset outward by at least `0.1` Blockbench units; structural
+  layers must meet at a boundary instead of occupying the same plane. Never waive this
+  rule because z-fighting is absent from one camera angle or one GPU.
 
 ## Iteration discipline
 

@@ -14,8 +14,14 @@
 2. Preserve the current project unless the user requests a replacement. For a new model, create a supported entity format with a deliberate texture size. If an entity format reports a missing plugin, record the limitation and fall back to another available cuboid format only when the requested geometry and texture semantics remain representable.
 3. Build named groups and cubes in bounded geometry batches.
 4. Use pivots at anatomical joints. Mirror only after one side has passed silhouette review.
-5. Run `check_model` before painting. Fix overlaps, zero-size cubes, bad pivots, and untextured faces.
-6. Capture two silhouette views. Texture cannot repair wrong proportions.
+5. Run a coordinate-level z-fighting audit before painting. For every pair of cubes whose
+   projected areas overlap, compare all six face planes. No two visible faces may occupy
+   the same plane. Paint flat decoration into the existing face; otherwise move the
+   overlay outward by at least `0.1` units. Trim stacked shells so they meet at one boundary
+   rather than overlapping with duplicate exterior faces.
+6. Run `check_model` before painting. Fix overlaps, zero-size cubes, bad pivots, and untextured faces.
+   `check_model` returning zero errors does not replace the coordinate-level z-fighting audit.
+7. Capture two silhouette views. Texture cannot repair wrong proportions.
 
 ## Texture sequence
 
@@ -27,6 +33,8 @@
 6. Compile the plan with `compile_texture_plan.py` and call `paint_face_features` with the resulting JSON arguments.
 7. Inspect both `get_texture` and rendered model views. Atlas correctness does not prove correct face orientation.
 8. Run `check_model` again after the final paint pass.
+9. Re-run the z-fighting audit after any resize, inflate, mirror, or geometry refinement;
+   these operations can recreate coincident planes after an earlier pass succeeded.
 
 ## Preview loop
 

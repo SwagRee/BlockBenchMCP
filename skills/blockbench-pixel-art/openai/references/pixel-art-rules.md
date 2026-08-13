@@ -19,8 +19,36 @@ Before building, record the subject and pose, three identifying silhouette featu
 - Use the fewest cubes that preserve the identifying silhouette.
 - Separate parts only when they change the outline, articulate, or require a distinct material boundary.
 - Check the silhouette untextured. At small scale, ears, muzzle, paws, tail, and stance must read without color.
-- Avoid coincident coplanar faces and uncontrolled cube intersections.
+- Never leave coincident coplanar visible faces. They are a hard failure because they can
+  flicker or swap draw order across cameras, GPUs, exports, and game renderers.
+- Prefer painting flat seams, straps, panels, and markings into the supporting face. When
+  geometry is required for silhouette or material depth, offset its visible face outward
+  by at least `0.1` Blockbench units from the supporting face. Do not use microscopic
+  epsilon offsets below `0.1` as a workaround.
+- For stacked shells, rails, lids, cuffs, and armor, trim the hidden layer so the pieces
+  meet at a boundary. Do not let their exterior faces share the same X, Y, or Z plane over
+  an overlapping area. Intersections are allowed only when every potentially visible
+  surface has a deliberate depth ordering of at least `0.1` units.
+- Do not rely on `inflate` to resolve coincident geometry; explicitly size the cubes so the
+  separation survives export.
 - Use consistent thickness for paired parts, then introduce asymmetry only where it supports the design.
+
+### Mandatory z-fighting gate
+
+Before texturing and again before delivery:
+
+1. Inspect cube bounds, including transformed or mirrored parts.
+2. For each face plane, find other faces on the same axis and coordinate whose two remaining
+   coordinate ranges overlap.
+3. Remove hidden duplicate faces where the format permits; otherwise trim, merge, or offset
+   the responsible cube by at least `0.1` units.
+4. Check overlays, body/rail seams, lids, armor, eyes, decals, transparent layers, and mirrored
+   center seams explicitly. These are the common failure regions.
+5. Orbit or capture at least one oblique view after the coordinate audit. Any shimmer, moire,
+   intermittent pixel row, or face-color switching fails the gate.
+
+Document every intentional intersection. `check_model` overlap findings may be accepted only
+when the exposed faces have distinct depth ordering and cannot become coplanar during animation.
 
 ## Palette and value structure
 
@@ -73,5 +101,5 @@ Suggested alpha roles:
 
 ## Visual acceptance tests
 
-Accept only when all relevant checks pass: silhouette reads at approximately 128 pixels tall; focal feature reads without zooming; light direction is consistent; no face appears accidentally flat, noisy, or camouflage-like; material identity is obvious; paired parts remain coherent; front, side, and isometric views agree; the atlas has no unintended overlap; and `check_model` has no unresolved findings.
+Accept only when all relevant checks pass: silhouette reads at approximately 128 pixels tall; focal feature reads without zooming; light direction is consistent; no face appears accidentally flat, noisy, or camouflage-like; material identity is obvious; paired parts remain coherent; front, side, and isometric views agree; the atlas has no unintended overlap; the mandatory coordinate-level z-fighting gate passes; and `check_model` has no unresolved findings.
 
