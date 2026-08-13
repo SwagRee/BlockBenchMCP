@@ -6,6 +6,7 @@ import { resolveUvMode, type UvMode } from "./uv-mode.js";
 export { paintFaceFeature, paintFaceFeatures } from "./face-batch.js";
 export { shadeModelBase } from "./shade-base.js";
 export { packBoxUv } from "./pack-uv.js";
+export { getUvLayout, getUvMap } from "./uv-layout.js";
 
 export function autoUvCubes(opts: {
   cubes?: string[];
@@ -24,15 +25,19 @@ export function autoUvCubes(opts: {
     cubes: list,
   });
   const host = getHost();
-  return host.undo.run({ elements: list, uv_only: true }, "auto_uv_cubes", () => {
-    const updated: string[] = [];
-    for (const cube of list) {
-      cube.box_uv = mode === "box";
-      cube.autouv = 1;
-      cube.mapAutoUV?.();
-      updated.push(cube.uuid);
-    }
-    refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
-    return { ok: true as const, undo_label: "auto_uv_cubes", mode, updated };
-  });
+  return host.undo.run(
+    { elements: list, uv_only: true },
+    "auto_uv_cubes",
+    () => {
+      const updated: string[] = [];
+      for (const cube of list) {
+        cube.box_uv = mode === "box";
+        cube.autouv = 1;
+        cube.mapAutoUV?.();
+        updated.push(cube.uuid);
+      }
+      refreshView(list.map((c) => ({ uuid: c.uuid, name: c.name })));
+      return { ok: true as const, undo_label: "auto_uv_cubes", mode, updated };
+    },
+  );
 }

@@ -67,15 +67,15 @@ Security: loopback only; Bearer required; file export needs `propose_scoped_dire
 
 ## Main tools
 
-| Area         | Tools                                                                                                                                                                             |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                      |
-| Review       | `check_model`, `capture_views` (native MCP image previews)                                                                                                                        |
-| Project      | `create_project`, `set_project_meta`                                                                                                                                              |
-| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `create_limb`, `mirror_elements`                                                                                     |
-| UV & texture | `ensure_texture`, `list_textures`, `assign_texture`, `auto_uv_cubes`, `pack_box_uv`, `set_face_uv`, `shade_model_base`, `paint_face_features`, `paint_pixel_batch`, `get_texture` |
-| Animation    | `upsert_animation`, `list_animations`, `delete_animation`                                                                                                                         |
-| Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                        |
+| Area         | Tools                                                                                                                                                                                                                              |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                                                                       |
+| Review       | `check_model`, `capture_views` (native MCP image previews)                                                                                                                                                                         |
+| Project      | `create_project`, `set_project_meta`                                                                                                                                                                                               |
+| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `create_limb`, `mirror_elements`                                                                                                                                      |
+| UV & texture | `ensure_texture`, `list_textures`, `assign_texture`, `auto_uv_cubes`, `pack_box_uv`, `get_uv_layout`, `get_uv_map`, `set_face_uv`, `resize_texture`, `shade_model_base`, `paint_face_features`, `paint_pixel_batch`, `get_texture` |
+| Animation    | `upsert_animation`, `list_animations`, `delete_animation`                                                                                                                                                                          |
+| Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                                                                         |
 
 Mutations return explicit success/failure; unknown params hard-error. Prefer `check_model` over vision spam.
 
@@ -90,13 +90,18 @@ the active format codec. Both require an approved scoped directory and explicit 
 2. `create_project`
 3. Entities: `scaffold_biped` / blocks: `apply_geometry_batch`
 4. Fix errors, then texture
-5. `pack_box_uv` → `shade_model_base` → `paint_face_features` (`pack_box_uv` / geometry follow project `uv_mode`: box vs per-face)
+5. `pack_box_uv` → `get_uv_layout` (zero out-of-bounds; review overlaps/density) → `get_uv_map` → paint → `get_texture` / `capture_views`
 6. `capture_views` only if needed
 
 `capture_views` and `get_texture` return native MCP image content so compatible
 clients can render previews directly. For crisp pixel work, `paint_pixel_batch`
 accepts multiple face-local paths with square or circle brushes, clips them to
 their UV faces by default, and commits the whole batch as one undo step.
+
+`get_uv_layout` provides machine-readable islands, overlap pairs, texel density,
+flips, rotation, and bounds. `get_uv_map` returns a labeled atlas preview.
+Face-local painting honors rotated/flipped UVs; subset packing preserves existing
+islands by default, and `resize_texture` can scale the bitmap and all UVs together.
 
 Check `uv_mode` on `health` / `get_project_summary`: `java_block` → face; Bedrock-style → box.
 

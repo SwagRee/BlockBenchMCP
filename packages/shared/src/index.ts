@@ -52,10 +52,13 @@ export {
 
 export {
   packBoxUvParamsSchema,
+  getUvLayoutParamsSchema,
+  getUvMapParamsSchema,
   shadeModelBaseParamsSchema,
   paintFaceFeaturesParamsSchema,
   paintPixelBatchParamsSchema,
   getTextureParamsSchema,
+  resizeTextureParamsSchema,
 } from "./contracts-texture.js";
 
 export {
@@ -92,4 +95,4 @@ export type { CapabilityId } from "./capabilities.js";
 export { UV_MODES, uvModeSchema, resolveUvModeFromHints } from "./uv-mode.js";
 export type { UvMode } from "./uv-mode.js";
 
-export const PLUGIN_VERSION = "0.2.0";
+export const PLUGIN_VERSION = "0.2.1";

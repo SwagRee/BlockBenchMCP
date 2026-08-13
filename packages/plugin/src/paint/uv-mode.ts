@@ -11,8 +11,7 @@ export function resolveUvMode(opts?: {
   const cubes = opts?.cubes;
   return resolveUvModeFromHints({
     explicit: opts?.explicit,
-    projectBoxUv:
-      typeof Project?.box_uv === "boolean" ? Project.box_uv : null,
+    projectBoxUv: typeof Project?.box_uv === "boolean" ? Project.box_uv : null,
     formatBoxUv: typeof Format?.box_uv === "boolean" ? Format.box_uv : null,
     formatId: currentFormatId() ?? Format?.id ?? null,
     cubeBoxFlags: cubes?.map((c) => Boolean(c.box_uv)),
@@ -70,10 +69,12 @@ export function applyPackedUvs(
     mode: UvMode;
     texW: number;
     padding?: number;
+    startY?: number;
   },
 ): { used: [number, number]; packed: number } {
   const pad = opts.padding ?? 1;
-  const shelf: Shelf = { x: 0, y: 0, rowH: 0, maxX: 0, maxY: 0 };
+  const startY = opts.startY ?? 0;
+  const shelf: Shelf = { x: 0, y: startY, rowH: 0, maxX: 0, maxY: startY };
 
   if (opts.mode === "box") {
     const items = cubes

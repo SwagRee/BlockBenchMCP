@@ -55,10 +55,17 @@ export function shadeModelBase(opts: {
   if (!list.length) throw new CommandError("E_NOT_FOUND", "No cubes to shade.");
 
   const host = getHost();
-  const tex =
-    (opts.texture ? host.textures.find(opts.texture) : undefined) ??
-    host.textures.defaultOrFirst();
-  if (!tex) throw new CommandError("E_NOT_FOUND", "No texture — call ensure_texture first.");
+  const tex = opts.texture
+    ? host.textures.find(opts.texture)
+    : host.textures.defaultOrFirst();
+  if (opts.texture && !tex) {
+    throw new CommandError("E_NOT_FOUND", `Texture not found: ${opts.texture}`);
+  }
+  if (!tex)
+    throw new CommandError(
+      "E_NOT_FOUND",
+      "No texture — call ensure_texture first.",
+    );
 
   const base = opts.base ?? "#9c9c9c";
   const mottle = opts.noise ?? 0.06;
@@ -75,9 +82,11 @@ export function shadeModelBase(opts: {
     west: 0.88,
   };
 
-  const Project = (globalThis as unknown as {
-    Project?: { texture_width?: number };
-  }).Project;
+  const Project = (
+    globalThis as unknown as {
+      Project?: { texture_width?: number };
+    }
+  ).Project;
   const scale = tex.width / (Project?.texture_width || tex.width || 64);
 
   return host.undo.run(
@@ -133,7 +142,8 @@ export function shadeModelBase(opts: {
           }
         }
         if (blurAmt > 0) {
-          for (const job of jobs) blurRect(ctx, job.x, job.y, job.w, job.h, blurAmt);
+          for (const job of jobs)
+            blurRect(ctx, job.x, job.y, job.w, job.h, blurAmt);
         }
       }, "shade_model_base");
 

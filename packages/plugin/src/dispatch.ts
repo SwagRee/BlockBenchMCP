@@ -11,6 +11,8 @@ import { ensureTexture } from "./texture/ensure.js";
 import { getTexture } from "./texture/get.js";
 import {
   autoUvCubes,
+  getUvLayout,
+  getUvMap,
   paintFaceFeature,
   paintFaceFeatures,
   packBoxUv,
@@ -24,6 +26,7 @@ import {
 } from "./commands/scope-export.js";
 import { upsertAnimation } from "./commands/animation.js";
 import { paintPixelBatch } from "./paint/pixel-batch.js";
+import { resizeTexture } from "./texture/resize.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 import {
@@ -101,10 +104,16 @@ export async function dispatchCommand(
       }
       case "auto_uv_cubes":
         return autoUvCubes((params ?? {}) as never);
+      case "get_uv_layout":
+        return getUvLayout((params ?? {}) as never);
+      case "get_uv_map":
+        return await getUvMap((params ?? {}) as never);
       case "set_face_uv":
         return setFaceUv((params ?? {}) as never);
       case "pack_box_uv":
         return packBoxUv((params ?? {}) as never);
+      case "resize_texture":
+        return resizeTexture((params ?? {}) as never);
       case "shade_model_base":
         return shadeModelBase((params ?? {}) as never);
       case "mirror_elements":

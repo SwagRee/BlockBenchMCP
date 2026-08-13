@@ -15,6 +15,10 @@ import {
   makeError,
   mutationResultSchema,
   paintPixelBatchParamsSchema,
+  packBoxUvParamsSchema,
+  getUvLayoutParamsSchema,
+  getUvMapParamsSchema,
+  resizeTextureParamsSchema,
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
@@ -129,6 +133,33 @@ describe("pixel brush batch contract", () => {
         ],
       }),
     );
+  });
+});
+
+describe("UV atlas contracts", () => {
+  it("accepts bounded packing, inspection, preview, and synchronized resize", () => {
+    packBoxUvParamsSchema.parse({
+      cubes: ["head"],
+      preserve_others: true,
+      power_of_two: true,
+      max_size: 1024,
+    });
+    getUvLayoutParamsSchema.parse({ cubes: ["head"], include_overlaps: true });
+    getUvMapParamsSchema.parse({ max_edge: 512, labels: true });
+    resizeTextureParamsSchema.parse({
+      width: 128,
+      height: 64,
+      rescale_uvs: true,
+    });
+  });
+
+  it("rejects unsafe atlas limits and unknown options", () => {
+    assert.throws(() => packBoxUvParamsSchema.parse({ max_size: 8192 }));
+    assert.throws(() => getUvMapParamsSchema.parse({ max_edge: 2048 }));
+    assert.throws(() =>
+      resizeTextureParamsSchema.parse({ width: 0, height: 64 }),
+    );
+    assert.throws(() => getUvLayoutParamsSchema.parse({ arbitrary: true }));
   });
 });
 

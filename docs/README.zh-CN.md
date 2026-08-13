@@ -67,15 +67,15 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 
 ## 主要工具
 
-| 类别      | 工具                                                                                                                                                                              |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                      |
-| 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                               |
-| 项目      | `create_project`、`set_project_meta`                                                                                                                                              |
-| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                     |
-| UV 与贴图 | `ensure_texture`、`list_textures`、`assign_texture`、`auto_uv_cubes`、`pack_box_uv`、`set_face_uv`、`shade_model_base`、`paint_face_features`、`paint_pixel_batch`、`get_texture` |
-| 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                         |
-| 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                        |
+| 类别      | 工具                                                                                                                                                                                                                               |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                                                                       |
+| 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                                                                                |
+| 项目      | `create_project`、`set_project_meta`                                                                                                                                                                                               |
+| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                                                                      |
+| UV 与贴图 | `ensure_texture`、`list_textures`、`assign_texture`、`auto_uv_cubes`、`pack_box_uv`、`get_uv_layout`、`get_uv_map`、`set_face_uv`、`resize_texture`、`shade_model_base`、`paint_face_features`、`paint_pixel_batch`、`get_texture` |
+| 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                                                                          |
+| 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                                                                         |
 
 突变工具显式返回成功/失败；未知参数硬报错，不静默丢弃。优先 `check_model`，少刷截图。
 
@@ -90,12 +90,16 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 2. `create_project`
 3. 实体：`scaffold_biped`／方块：`apply_geometry_batch`
 4. 修完 error 再贴图
-5. `pack_box_uv` → `shade_model_base` → `paint_face_features`（按项目 `uv_mode` 自动选箱型或逐面）
+5. `pack_box_uv` → `get_uv_layout`（越界必须为 0，并检查重叠与密度）→ `get_uv_map` → 绘制 → `get_texture` / `capture_views`
 6. 需要时再 `capture_views`
 
 `capture_views` 和 `get_texture` 会返回原生 MCP 图片内容，兼容客户端可直接显示预览。
 精细像素绘制可使用 `paint_pixel_batch`：一次提交多条逐面路径，支持方形／圆形笔刷，
 默认裁剪在各自 UV 面内，并把整批操作合并为一次撤销。
+
+`get_uv_layout` 会结构化返回 UV 岛、重叠对、纹素密度、翻转、旋转和边界；
+`get_uv_map` 返回带标签的图集预览。逐面绘制现已正确处理旋转／翻转 UV；局部打包默认保护已有 UV 岛，
+`resize_texture` 可按最近邻同步缩放位图和全部 UV。
 
 先看 `health` / `get_project_summary` 的 `uv_mode`：`java_block` 为逐面（face），Bedrock 类多为箱型（box）。
 

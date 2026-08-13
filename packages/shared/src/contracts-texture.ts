@@ -5,6 +5,7 @@ const faceEnum = z.enum(["north", "south", "east", "west", "up", "down"]);
 export const packBoxUvParamsSchema = z
   .object({
     cubes: z.array(z.string().min(1)).optional(),
+    texture: z.string().optional(),
     padding: z.number().int().nonnegative().max(8).optional(),
     /** Grow Project.texture_* and bitmap if packed extent overflows. */
     auto_resize: z.boolean().optional(),
@@ -13,6 +14,38 @@ export const packBoxUvParamsSchema = z
      * (`java_block` → per-face, Bedrock-style → box).
      */
     mode: z.enum(["box", "face", "auto"]).optional(),
+    /** When packing a cube subset, keep clear of islands belonging to other cubes. */
+    preserve_others: z.boolean().optional(),
+    /** Round an automatically grown atlas up to powers of two (default true). */
+    power_of_two: z.boolean().optional(),
+    max_size: z.number().int().positive().max(4096).optional(),
+  })
+  .strict();
+
+export const getUvLayoutParamsSchema = z
+  .object({
+    cubes: z.array(z.string().min(1)).max(256).optional(),
+    /** Include pairwise overlap records (default true). */
+    include_overlaps: z.boolean().optional(),
+  })
+  .strict();
+
+export const getUvMapParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    cubes: z.array(z.string().min(1)).max(256).optional(),
+    max_edge: z.number().int().positive().max(1024).optional(),
+    labels: z.boolean().optional(),
+  })
+  .strict();
+
+export const resizeTextureParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    width: z.number().int().positive().max(4096),
+    height: z.number().int().positive().max(4096),
+    /** Scale every cube UV with the bitmap (default true). */
+    rescale_uvs: z.boolean().optional(),
   })
   .strict();
 

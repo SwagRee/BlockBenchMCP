@@ -19,6 +19,8 @@ describe("generation smoke contract", () => {
       "check_model",
       "ensure_texture",
       "pack_box_uv",
+      "get_uv_layout",
+      "get_uv_map",
       "shade_model_base",
       "paint_face_features",
       "paint_pixel_batch",
@@ -32,6 +34,7 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("apply_geometry_batch"));
     assert.ok(COMMAND_NAMES.includes("paint_face_feature"));
     assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
+    assert.ok(COMMAND_NAMES.includes("resize_texture"));
   });
 
   it("exposes a complete safe read-modify-manage loop", () => {
@@ -55,6 +58,8 @@ describe("generation smoke contract", () => {
   it("texturing guide prefers pack + shade before features", () => {
     const g = resolveGuide("texturing");
     assert.match(g.text, /pack_box_uv/i);
+    assert.match(g.text, /get_uv_layout/i);
+    assert.match(g.text, /get_uv_map/i);
     assert.match(g.text, /shade_model_base/i);
     assert.match(g.text, /paint_face_features/i);
   });

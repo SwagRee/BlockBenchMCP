@@ -1,6 +1,7 @@
 import type { CheckModelResult } from "@blockbench-mcp/shared";
 import { requireProject } from "../bb/elements.js";
 import { center, cubeAabb, dist, overlaps, volume } from "./aabb.js";
+import { getUvLayout } from "../paint/uv-layout.js";
 
 export function runCheckModel(): CheckModelResult {
   requireProject();
@@ -120,6 +121,19 @@ export function runCheckModel(): CheckModelResult {
         });
       }
     }
+  }
+
+  const uvLayout = getUvLayout({ include_overlaps: true });
+  if (uvLayout.summary.overlaps > 0) {
+    const examples = uvLayout.overlaps
+      .slice(0, 3)
+      .map((pair) => `${pair.a}↔${pair.b}`)
+      .join(", ");
+    findings.push({
+      severity: "warn",
+      code: "UV_OVERLAP",
+      message: `${uvLayout.summary.overlaps} overlapping UV face pair(s) detected${examples ? `: ${examples}` : ""}. Review get_uv_layout before painting.`,
+    });
   }
 
   if (Cube.all.length === 0) {

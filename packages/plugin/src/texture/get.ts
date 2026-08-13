@@ -3,10 +3,7 @@ import { getHost } from "../host/live.js";
 import { CommandError } from "../errors.js";
 
 /** Return a compact PNG data URL of a project texture for agent inspection. */
-export function getTexture(opts: {
-  texture?: string;
-  max_edge?: number;
-}): {
+export function getTexture(opts: { texture?: string; max_edge?: number }): {
   name: string;
   uuid: string;
   width: number;
@@ -17,9 +14,12 @@ export function getTexture(opts: {
 } {
   requireProject();
   const host = getHost();
-  const tex =
-    (opts.texture ? host.textures.find(opts.texture) : undefined) ??
-    host.textures.defaultOrFirst();
+  const tex = opts.texture
+    ? host.textures.find(opts.texture)
+    : host.textures.defaultOrFirst();
+  if (opts.texture && !tex) {
+    throw new CommandError("E_NOT_FOUND", `Texture not found: ${opts.texture}`);
+  }
   if (!tex) throw new CommandError("E_NOT_FOUND", "No texture in project");
 
   const maxEdge = opts.max_edge ?? 256;

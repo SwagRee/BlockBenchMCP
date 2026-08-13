@@ -1,6 +1,7 @@
 import { requireCube, requireProject, refreshView } from "../bb/elements.js";
 import { CommandError } from "../errors.js";
 import { getHost } from "../host/live.js";
+import { paintFaceLocal, resolveFaceSpace } from "./face-space.js";
 
 type Point = { x: number; y: number };
 type Stroke = {
@@ -75,9 +76,12 @@ export function paintPixelBatch(opts: {
     throw new CommandError("E_INVALID_PARAM", "strokes[] required");
   }
   const host = getHost();
-  const tex =
-    (opts.texture ? host.textures.find(opts.texture) : undefined) ??
-    host.textures.defaultOrFirst();
+  const tex = opts.texture
+    ? host.textures.find(opts.texture)
+    : host.textures.defaultOrFirst();
+  if (opts.texture && !tex) {
+    throw new CommandError("E_NOT_FOUND", `Texture not found: ${opts.texture}`);
+  }
   if (!tex) throw new CommandError("E_NOT_FOUND", "No texture available");
 
   const jobs = opts.strokes.map((stroke) => {
@@ -89,14 +93,10 @@ export function paintPixelBatch(opts: {
         `Face not found: ${stroke.cube}.${stroke.face}`,
       );
     }
-    const uv = face.uv ?? [0, 0, 16, 16];
     return {
       ...stroke,
       cube,
-      originX: Math.floor(Math.min(uv[0], uv[2])),
-      originY: Math.floor(Math.min(uv[1], uv[3])),
-      faceW: Math.max(1, Math.ceil(Math.abs(uv[2] - uv[0]))),
-      faceH: Math.max(1, Math.ceil(Math.abs(uv[3] - uv[1]))),
+      space: resolveFaceSpace(cube, stroke.face),
       size: stroke.size ?? 1,
       shape: stroke.shape ?? "square",
     };
@@ -112,31 +112,31 @@ export function paintPixelBatch(opts: {
       tex.edit((ctx) => {
         ctx.imageSmoothingEnabled = false;
         for (const job of jobs) {
-          ctx.save();
-          if (opts.clip_to_face !== false) {
-            ctx.beginPath();
-            ctx.rect(job.originX, job.originY, job.faceW, job.faceH);
-            ctx.clip();
-          }
-          ctx.fillStyle = job.color;
-          const draw = (x: number, y: number) => {
-            stamp(ctx, job.originX + x, job.originY + y, job.size, job.shape);
-            stamps += 1;
-          };
-          draw(job.points[0].x, job.points[0].y);
-          for (let i = 1; i < job.points.length; i += 1) {
-            const previous = job.points[i - 1];
-            const current = job.points[i];
-            let first = true;
-            walkLine(previous, current, (x, y) => {
-              if (first) {
-                first = false;
-                return;
-              }
-              draw(x, y);
-            });
-          }
-          ctx.restore();
+          paintFaceLocal(ctx, job.space, (local) => {
+            if (opts.clip_to_face !== false) {
+              local.beginPath();
+              local.rect(0, 0, job.space.width, job.space.height);
+              local.clip();
+            }
+            local.fillStyle = job.color;
+            const draw = (x: number, y: number) => {
+              stamp(local, x, y, job.size, job.shape);
+              stamps += 1;
+            };
+            draw(job.points[0].x, job.points[0].y);
+            for (let i = 1; i < job.points.length; i += 1) {
+              const previous = job.points[i - 1];
+              const current = job.points[i];
+              let first = true;
+              walkLine(previous, current, (x, y) => {
+                if (first) {
+                  first = false;
+                  return;
+                }
+                draw(x, y);
+              });
+            }
+          });
         }
       }, "paint_pixel_batch");
       refreshView(

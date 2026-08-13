@@ -1,6 +1,7 @@
 import { requireCube, requireProject, refreshView } from "../bb/elements.js";
 import { getHost } from "../host/live.js";
 import { CommandError } from "../errors.js";
+import { paintFaceLocal, resolveFaceSpace } from "./face-space.js";
 
 type PaintOp = {
   type: "fill" | "rect" | "ellipse" | "line";
@@ -15,8 +16,6 @@ type PaintOp = {
 
 function applyOp(
   ctx: CanvasRenderingContext2D,
-  originX: number,
-  originY: number,
   faceW: number,
   faceH: number,
   op: PaintOp,
@@ -24,14 +23,14 @@ function applyOp(
   ctx.fillStyle = op.color;
   ctx.strokeStyle = op.color;
   if (op.type === "fill") {
-    ctx.fillRect(originX, originY, faceW, faceH);
+    ctx.fillRect(0, 0, faceW, faceH);
     return;
   }
   if (op.type === "line") {
-    const x1 = originX + (op.x ?? 0);
-    const y1 = originY + (op.y ?? 0);
-    const x2 = originX + (op.x2 ?? op.x ?? 0);
-    const y2 = originY + (op.y2 ?? op.y ?? 0);
+    const x1 = op.x ?? 0;
+    const y1 = op.y ?? 0;
+    const x2 = op.x2 ?? op.x ?? 0;
+    const y2 = op.y2 ?? op.y ?? 0;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -39,8 +38,8 @@ function applyOp(
     ctx.stroke();
     return;
   }
-  const x = originX + (op.x ?? 0);
-  const y = originY + (op.y ?? 0);
+  const x = op.x ?? 0;
+  const y = op.y ?? 0;
   const w = op.width ?? 1;
   const h = op.height ?? 1;
   if (op.type === "rect") {
@@ -66,9 +65,12 @@ export function paintFaceFeatures(opts: {
     throw new CommandError("E_INVALID_PARAM", "faces[] required");
   }
   const host = getHost();
-  const tex =
-    (opts.texture ? host.textures.find(opts.texture) : undefined) ??
-    host.textures.defaultOrFirst();
+  const tex = opts.texture
+    ? host.textures.find(opts.texture)
+    : host.textures.defaultOrFirst();
+  if (opts.texture && !tex) {
+    throw new CommandError("E_NOT_FOUND", `Texture not found: ${opts.texture}`);
+  }
   if (!tex) throw new CommandError("E_NOT_FOUND", "No texture available");
 
   const jobs = opts.faces.map((item) => {
@@ -80,14 +82,10 @@ export function paintFaceFeatures(opts: {
         `Face not found: ${item.cube}.${item.face}`,
       );
     }
-    const uv = face.uv ?? [0, 0, 16, 16];
     return {
       cube,
       faceName: item.face,
-      originX: Math.min(uv[0], uv[2]),
-      originY: Math.min(uv[1], uv[3]),
-      faceW: Math.abs(uv[2] - uv[0]) || 1,
-      faceH: Math.abs(uv[3] - uv[1]) || 1,
+      space: resolveFaceSpace(cube, item.face),
       ops: item.ops,
     };
   });
@@ -103,9 +101,10 @@ export function paintFaceFeatures(opts: {
       tex.edit((ctx) => {
         ctx.imageSmoothingEnabled = false;
         for (const job of jobs) {
-          for (const op of job.ops) {
-            applyOp(ctx, job.originX, job.originY, job.faceW, job.faceH, op);
-          }
+          paintFaceLocal(ctx, job.space, (local) => {
+            for (const op of job.ops)
+              applyOp(local, job.space.width, job.space.height, op);
+          });
         }
       }, "paint_face_features");
       refreshView(jobs.map((j) => ({ uuid: j.cube.uuid, name: j.cube.name })));

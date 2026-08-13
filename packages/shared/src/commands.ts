@@ -17,9 +17,12 @@ import {
 } from "./contracts-extra.js";
 import {
   getTextureParamsSchema,
+  getUvLayoutParamsSchema,
+  getUvMapParamsSchema,
   packBoxUvParamsSchema,
   paintFaceFeaturesParamsSchema,
   paintPixelBatchParamsSchema,
+  resizeTextureParamsSchema,
   shadeModelBaseParamsSchema,
 } from "./contracts-texture.js";
 import {
@@ -148,6 +151,18 @@ export const COMMAND_SPECS = {
     mutates: true,
     params: autoUvCubesParamsSchema,
   },
+  get_uv_layout: {
+    description:
+      "Inspect the atlas as semantic face islands: UV rect, flips, rotation, model-face texel size/density, bounds, and overlaps.",
+    mutates: false,
+    params: getUvLayoutParamsSchema,
+  },
+  get_uv_map: {
+    description:
+      "Render the selected texture with UV island borders and optional cube.face labels as a native MCP image preview.",
+    mutates: false,
+    params: getUvMapParamsSchema,
+  },
   set_face_uv: {
     description:
       "Set exact per-face UV rectangles and optional quarter-turn rotation for multiple cube faces in ONE undo.",
@@ -159,6 +174,12 @@ export const COMMAND_SPECS = {
       "Pack unique UV islands before shade/paint. Auto-detects box vs per-face (java_block→face). Optional mode box|face|auto; auto_resize grows atlas.",
     mutates: true,
     params: packBoxUvParamsSchema,
+  },
+  resize_texture: {
+    description:
+      "Resize a texture with nearest-neighbor sampling and optionally rescale all UV coordinates in ONE undo.",
+    mutates: true,
+    params: resizeTextureParamsSchema,
   },
   shade_model_base: {
     description:

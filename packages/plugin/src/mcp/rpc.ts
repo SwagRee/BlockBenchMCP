@@ -160,7 +160,10 @@ async function callTool(
 
   try {
     const result = await dispatchCommand(session, name, parsed.data);
-    const hasImages = name === "capture_views" || name === "get_texture";
+    const hasImages =
+      name === "capture_views" ||
+      name === "get_texture" ||
+      name === "get_uv_map";
     const base = envelope(
       true,
       `OK: ${name}`,

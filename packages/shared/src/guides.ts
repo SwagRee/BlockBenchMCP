@@ -31,11 +31,13 @@ export const GUIDE_MODELING = `
 export const GUIDE_TEXTURING = `
 # Texturing
 
-1. ensure_texture (64 entities / 16 blocks). Call pack_box_uv so islands do not share pixels (auto box vs face).
-2. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
-3. paint_face_features for geometric accents; paint_pixel_batch for multiple crisp brush paths (face-local 0,0 = face UV top-left).
-4. get_texture to inspect the sheet; fix gaps; re-check_model for UNTEXTURED_FACE.
-5. Palette 4–8 colors. Avoid painting before pack_box_uv. Respect uv_mode from the project.
+1. ensure_texture (64 entities / 16 blocks), then pack_box_uv. Subset packing preserves other islands by default; auto-resize uses power-of-two atlases.
+2. get_uv_layout before painting. Require summary.out_of_bounds=0 and review every overlap; compare density across related faces.
+3. get_uv_map to visually verify island placement, face orientation, flips, and rotation.
+4. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
+5. paint_face_features for accents; paint_pixel_batch for crisp brush paths. Both use face-local coordinates and honor rotated/flipped UVs.
+6. get_texture + get_uv_map, then capture_views. Fix gaps and re-check_model for UNTEXTURED_FACE.
+7. Palette 4–8 colors. Never paint before the UV layout passes inspection. Use resize_texture when atlas and UVs must scale together.
 `.trim();
 
 export const GUIDE_ANIMATION = `
