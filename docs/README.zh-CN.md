@@ -109,6 +109,9 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 精细像素绘制可使用 `paint_pixel_batch`：一次提交多条逐面路径，支持方形／圆形笔刷，
 默认裁剪在各自 UV 面内，并把整批操作合并为一次撤销。
 
+每个正交视图还会返回 `visible_face`（`north` / `south` 等），表示朝向相机的模型面；
+等轴视图返回 `null`。绘制脸部等焦点细节前应依此确认正面，不要沿用上一个工程的方向假设。
+
 `get_uv_layout` 会结构化返回 UV 岛、重叠对、纹素密度、翻转、旋转和边界；
 `get_uv_map` 返回带标签的图集预览。逐面绘制现已正确处理旋转／翻转 UV；局部打包默认保护已有 UV 岛，
 `resize_texture` 可按最近邻同步缩放位图和全部 UV。

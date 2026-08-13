@@ -116,6 +116,11 @@ clients can render previews directly. For crisp pixel work, `paint_pixel_batch`
 accepts multiple face-local paths with square or circle brushes, clips them to
 their UV faces by default, and commits the whole batch as one undo step.
 
+Each orthographic capture also reports `visible_face` (`north`, `south`, etc.).
+This names the model face looking toward the camera; isometric captures report
+`null`. Use it to place focal details deliberately instead of guessing front-face
+orientation from a prior project.
+
 `get_uv_layout` provides machine-readable islands, overlap pairs, texel density,
 flips, rotation, and bounds. `get_uv_map` returns a labeled atlas preview.
 Face-local painting honors rotated/flipped UVs; subset packing preserves existing

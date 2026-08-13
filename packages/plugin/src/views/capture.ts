@@ -9,6 +9,7 @@ import { getHost } from "../host/live.js";
 export async function captureViews(params: CaptureViewsParams = {}): Promise<{
   views: Array<{
     view: ViewPreset;
+    visible_face: ViewPreset | null;
     width: number;
     height: number;
     bytes: number;
@@ -26,6 +27,7 @@ export async function captureViews(params: CaptureViewsParams = {}): Promise<{
   const quality = (params.quality ?? captureViewsDefaults.quality) / 100;
   const out: Array<{
     view: ViewPreset;
+    visible_face: ViewPreset | null;
     width: number;
     height: number;
     bytes: number;
@@ -42,6 +44,7 @@ export async function captureViews(params: CaptureViewsParams = {}): Promise<{
     const b64 = compressed.dataUrl.split(",")[1] ?? "";
     out.push({
       view,
+      visible_face: view === "iso" ? null : view,
       width: compressed.width,
       height: compressed.height,
       bytes: Math.floor((b64.length * 3) / 4),

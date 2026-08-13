@@ -109,6 +109,7 @@ export const captureViewsDefaults = {
 export const captureViewMetaSchema = z
   .object({
     view: z.enum(VIEW_PRESETS),
+    visible_face: z.enum(VIEW_PRESETS).nullable(),
     width: z.number().int().positive(),
     height: z.number().int().positive(),
     bytes: z.number().int().nonnegative(),

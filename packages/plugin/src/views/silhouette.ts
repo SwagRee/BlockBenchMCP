@@ -57,6 +57,7 @@ export async function analyzeViewSilhouette(opts: {
     const bounds = foreground ? [minX, minY, maxX + 1, maxY + 1] : [0, 0, 0, 0];
     rows.push({
       view: view.view,
+      visible_face: view.visible_face,
       width: canvas.width,
       height: canvas.height,
       bounds,

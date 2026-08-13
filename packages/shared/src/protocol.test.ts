@@ -10,6 +10,7 @@ import {
   applyGeometryBatchParamsSchema,
   captureViewsDefaults,
   captureViewsParamsSchema,
+  captureViewMetaSchema,
   checkModelParamsSchema,
   createLimbParamsSchema,
   isCommandName,
@@ -110,6 +111,17 @@ describe("capture_views contract", () => {
     assert.throws(() =>
       captureViewsParamsSchema.parse({ views: ["iso"], extra: true }),
     );
+  });
+
+  it("describes which model face an orthographic camera sees", () => {
+    captureViewMetaSchema.parse({
+      view: "north",
+      visible_face: "north",
+      width: 128,
+      height: 128,
+      bytes: 32,
+      mime: "image/png",
+    });
   });
 });
 

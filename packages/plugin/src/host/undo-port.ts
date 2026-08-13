@@ -43,6 +43,20 @@ export function createUndoPort(): UndoPort {
       const liveAnimations: unknown[] = [];
       // Avoid empty `elements: []` — BB 5.1 can throw getUndoCopy on bad aspect entries.
       const initAspects = { ...aspects };
+      // Commands operate on host-port wrappers, while Blockbench's Undo API must
+      // receive the corresponding native instances.  Passing wrappers works for
+      // most geometry paths but BB 5.1 calls Texture#getUndoCopy during initEdit.
+      // Normalize both initial and finish aspects so bitmap edits are undoable.
+      if (Array.isArray(initAspects.elements)) {
+        initAspects.elements = resolveUndoElements(
+          initAspects.elements as unknown[],
+        );
+      }
+      if (Array.isArray(initAspects.textures)) {
+        initAspects.textures = resolveUndoTextures(
+          initAspects.textures as unknown[],
+        );
+      }
       if (
         Array.isArray(initAspects.elements) &&
         (initAspects.elements as unknown[]).length === 0
@@ -144,6 +158,39 @@ function resolveLive(refs: BbElementRef[]): unknown[] {
     if (hit) out.push(hit);
   }
   return out;
+}
+
+function resolveUndoElements(values: unknown[]): unknown[] {
+  const native = values.filter(hasUndoCopy);
+  const refs = values.filter(isElementRef) as BbElementRef[];
+  return [...native, ...resolveLive(refs)].filter(uniqueIdentity);
+}
+
+function resolveUndoTextures(values: unknown[]): unknown[] {
+  const native = values.filter(hasUndoCopy);
+  const refs = values.filter(isElementRef) as BbElementRef[];
+  return [...native, ...resolveLiveTextures(refs)].filter(uniqueIdentity);
+}
+
+function hasUndoCopy(value: unknown): boolean {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "getUndoCopy" in (value as object) &&
+    typeof (value as { getUndoCopy?: unknown }).getUndoCopy === "function",
+  );
+}
+
+function isElementRef(value: unknown): value is BbElementRef {
+  return Boolean(value && typeof value === "object" && "uuid" in value);
+}
+
+function uniqueIdentity(
+  value: unknown,
+  index: number,
+  values: unknown[],
+): boolean {
+  return values.indexOf(value) === index;
 }
 
 function resolveLiveTextures(refs: BbElementRef[]): unknown[] {

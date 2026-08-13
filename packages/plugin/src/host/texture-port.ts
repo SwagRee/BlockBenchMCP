@@ -25,7 +25,8 @@ type TextureCtor = {
 
 function textureApi(): TextureCtor {
   const T = (globalThis as unknown as { Texture?: TextureCtor }).Texture;
-  if (!T) throw new CommandError("E_BLOCKBENCH_ERROR", "Texture API unavailable");
+  if (!T)
+    throw new CommandError("E_BLOCKBENCH_ERROR", "Texture API unavailable");
   return T;
 }
 
@@ -37,28 +38,44 @@ function wrap(tex: BbTexture): TextureHandle {
     height: tex.height,
     edit(paint, editName) {
       if (typeof tex.edit === "function") {
-        tex.edit((canvas) => {
-          const ctx = canvas.getContext("2d") ?? tex.ctx;
-          if (!ctx) {
-            throw new CommandError("E_BLOCKBENCH_ERROR", "Texture canvas has no 2d context");
-          }
-          paint(ctx, canvas);
-        }, { edit_name: editName });
+        tex.edit(
+          (canvas) => {
+            const ctx = canvas.getContext("2d") ?? tex.ctx;
+            if (!ctx) {
+              throw new CommandError(
+                "E_BLOCKBENCH_ERROR",
+                "Texture canvas has no 2d context",
+              );
+            }
+            paint(ctx, canvas);
+          },
+          { edit_name: editName },
+        );
         tex.updateChangesAfterEdit?.();
         return;
       }
       const canvas = tex.canvas;
       const ctx = canvas?.getContext("2d") ?? tex.ctx;
       if (!canvas || !ctx) {
-        throw new CommandError("E_BLOCKBENCH_ERROR", "Texture.edit unavailable");
+        throw new CommandError(
+          "E_BLOCKBENCH_ERROR",
+          "Texture.edit unavailable",
+        );
       }
       paint(ctx, canvas);
       tex.updateChangesAfterEdit?.();
     },
     applyToCube(cubeUuid, faces = true) {
-      const Cube = (globalThis as unknown as {
-        Cube?: { all: Array<{ uuid: string; applyTexture: (t: BbTexture, f?: true | string[]) => void }> };
-      }).Cube;
+      const Cube = (
+        globalThis as unknown as {
+          Cube?: {
+            all: Array<{
+              uuid: string;
+              applyTexture: (t: BbTexture, f?: true | string[]) => void;
+            }>;
+          };
+        }
+      ).Cube;
       const cube = Cube?.all.find((c) => c.uuid === cubeUuid);
       if (!cube) throw new CommandError("E_NOT_FOUND", `Cube ${cubeUuid}`);
       cube.applyTexture(tex, faces);
@@ -67,7 +84,10 @@ function wrap(tex: BbTexture): TextureHandle {
       const src =
         tex.canvas ??
         (() => {
-          throw new CommandError("E_BLOCKBENCH_ERROR", "Texture has no canvas for export");
+          throw new CommandError(
+            "E_BLOCKBENCH_ERROR",
+            "Texture has no canvas for export",
+          );
         })();
       const w = src.width || tex.width;
       const h = src.height || tex.height;
@@ -124,15 +144,16 @@ export function createTexturePort(): TexturePort {
         );
       }
       tex.fromDataURL(dataUrl);
+      // Blockbench decodes data URLs asynchronously. Keep the public texture
+      // metadata usable immediately so a create -> assign/paint sequence does
+      // not transiently report 0x0 dimensions.
+      tex.width = opts.width;
+      tex.height = opts.height;
       // undo:false — caller owns Undo via UndoPort
       tex.add(false);
-      const Project = (globalThis as unknown as {
-        Project?: { texture_width?: number; texture_height?: number };
-      }).Project;
-      if (Project) {
-        Project.texture_width = opts.width;
-        Project.texture_height = opts.height;
-      }
+      // Texture creation is not project resizing. In particular, helper maps
+      // (emissive masks, palette swatches, decals) may deliberately differ in
+      // size. resize_texture/set_project_meta own that explicit operation.
       return wrap(tex);
     },
   };
