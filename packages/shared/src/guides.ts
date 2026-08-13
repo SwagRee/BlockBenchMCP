@@ -33,7 +33,7 @@ export const GUIDE_TEXTURING = `
 
 1. ensure_texture (64 entities / 16 blocks). Call pack_box_uv so islands do not share pixels (auto box vs face).
 2. shade_model_base with regions (head/body/arm/leg colors) — soft lighting + blur. Do NOT flat-fill everything.
-3. paint_face_features for eyes/mouth/trim (batch ops, face-local 0,0 = face UV top-left).
+3. paint_face_features for geometric accents; paint_pixel_batch for multiple crisp brush paths (face-local 0,0 = face UV top-left).
 4. get_texture to inspect the sheet; fix gaps; re-check_model for UNTEXTURED_FACE.
 5. Palette 4–8 colors. Avoid painting before pack_box_uv. Respect uv_mode from the project.
 `.trim();

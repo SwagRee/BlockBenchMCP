@@ -53,6 +53,47 @@ const paintOpSchema = z
   })
   .strict();
 
+const pixelPointSchema = z
+  .object({
+    x: z.number().int().nonnegative(),
+    y: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const pixelStrokeSchema = z
+  .object({
+    cube: z.string().min(1),
+    face: faceEnum,
+    color: z.string().min(1),
+    /** Face-local pixel path. Consecutive points are joined deterministically. */
+    points: z.array(pixelPointSchema).min(1).max(4096),
+    size: z.number().int().positive().max(32).optional(),
+    shape: z.enum(["square", "circle"]).optional(),
+  })
+  .strict();
+
+export const paintPixelBatchParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    strokes: z.array(pixelStrokeSchema).min(1).max(256),
+    /** Keep every brush stamp inside its target face (default true). */
+    clip_to_face: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const points = value.strokes.reduce(
+      (sum, stroke) => sum + stroke.points.length,
+      0,
+    );
+    if (points > 16384) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["strokes"],
+        message: "A batch may contain at most 16384 brush points",
+      });
+    }
+  });
+
 export const paintFaceFeaturesParamsSchema = z
   .object({
     texture: z.string().optional(),

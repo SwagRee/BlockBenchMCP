@@ -21,6 +21,7 @@ describe("generation smoke contract", () => {
       "pack_box_uv",
       "shade_model_base",
       "paint_face_features",
+      "paint_pixel_batch",
       "get_texture",
       "capture_views",
     ] as const;

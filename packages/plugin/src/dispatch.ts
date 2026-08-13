@@ -17,8 +17,12 @@ import {
   shadeModelBase,
 } from "./paint/face-feature.js";
 import { mirrorElements } from "./geometry/mirror.js";
-import { proposeScopedDirectory, exportModel } from "./commands/scope-export.js";
+import {
+  proposeScopedDirectory,
+  exportModel,
+} from "./commands/scope-export.js";
 import { upsertAnimation } from "./commands/animation.js";
+import { paintPixelBatch } from "./paint/pixel-batch.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 
@@ -37,8 +41,16 @@ export async function dispatchCommand(
         return await captureViews((params ?? {}) as never);
       case "get_guide":
         return resolveGuide(
-          (params as { topic?: "modeling" | "texturing" | "animation" | "java_block" | "geckolib" } | null)
-            ?.topic,
+          (
+            params as {
+              topic?:
+                | "modeling"
+                | "texturing"
+                | "animation"
+                | "java_block"
+                | "geckolib";
+            } | null
+          )?.topic,
         );
       case "create_project": {
         const p = params as {
@@ -74,6 +86,8 @@ export async function dispatchCommand(
         return paintFaceFeature((params ?? {}) as never);
       case "paint_face_features":
         return paintFaceFeatures((params ?? {}) as never);
+      case "paint_pixel_batch":
+        return paintPixelBatch((params ?? {}) as never);
       case "get_texture":
         return getTexture((params ?? {}) as never);
       case "upsert_animation":

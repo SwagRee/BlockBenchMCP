@@ -2,13 +2,48 @@ import type { PreviewPort } from "./ports.js";
 import { CommandError } from "../errors.js";
 
 const FALLBACK: Record<string, Record<string, unknown>> = {
-  north: { id: "north", projection: "orthogonal", position: [0, 16, -64], target: [0, 16, 0] },
-  south: { id: "south", projection: "orthogonal", position: [0, 16, 64], target: [0, 16, 0] },
-  east: { id: "east", projection: "orthogonal", position: [64, 16, 0], target: [0, 16, 0] },
-  west: { id: "west", projection: "orthogonal", position: [-64, 16, 0], target: [0, 16, 0] },
-  up: { id: "up", projection: "orthogonal", position: [0, 64, 0], target: [0, 16, 0] },
-  down: { id: "down", projection: "orthogonal", position: [0, -64, 0], target: [0, 16, 0] },
-  iso: { id: "isometric", projection: "orthogonal", position: [40, 40, 40], target: [0, 16, 0] },
+  north: {
+    id: "north",
+    projection: "orthogonal",
+    position: [0, 16, -64],
+    target: [0, 16, 0],
+  },
+  south: {
+    id: "south",
+    projection: "orthogonal",
+    position: [0, 16, 64],
+    target: [0, 16, 0],
+  },
+  east: {
+    id: "east",
+    projection: "orthogonal",
+    position: [64, 16, 0],
+    target: [0, 16, 0],
+  },
+  west: {
+    id: "west",
+    projection: "orthogonal",
+    position: [-64, 16, 0],
+    target: [0, 16, 0],
+  },
+  up: {
+    id: "up",
+    projection: "orthogonal",
+    position: [0, 64, 0],
+    target: [0, 16, 0],
+  },
+  down: {
+    id: "down",
+    projection: "orthogonal",
+    position: [0, -64, 0],
+    target: [0, 16, 0],
+  },
+  iso: {
+    id: "isometric",
+    projection: "orthogonal",
+    position: [40, 40, 40],
+    target: [0, 16, 0],
+  },
 };
 
 export function createPreviewPort(): PreviewPort {
@@ -28,7 +63,9 @@ export function createPreviewPort(): PreviewPort {
             ) => void;
           };
           Preview?: { selected?: unknown };
-          DefaultCameraPresets?: Array<Record<string, unknown> & { id?: string }>;
+          DefaultCameraPresets?: Array<
+            Record<string, unknown> & { id?: string }
+          >;
         };
         const preview = g.Screencam?.NoAAPreview ?? g.Preview?.selected;
         if (!preview || !g.Screencam?.screenshotPreview) {
@@ -57,7 +94,16 @@ export function createPreviewPort(): PreviewPort {
             { width: size, height: size, crop: false },
             (url) => {
               clearTimeout(t);
-              resolve(url);
+              const image = new Image();
+              image.onload = () =>
+                resolve({
+                  dataUrl: url,
+                  width: image.naturalWidth || size,
+                  height: image.naturalHeight || size,
+                });
+              image.onerror = () =>
+                resolve({ dataUrl: url, width: size, height: size });
+              image.src = url;
             },
           );
         } catch (err) {

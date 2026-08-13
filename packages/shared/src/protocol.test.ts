@@ -14,6 +14,7 @@ import {
   isCommandName,
   makeError,
   mutationResultSchema,
+  paintPixelBatchParamsSchema,
   resolveGuide,
   scaffoldBipedParamsSchema,
 } from "./index.js";
@@ -74,6 +75,55 @@ describe("capture_views contract", () => {
   it("rejects unknown keys", () => {
     assert.throws(() =>
       captureViewsParamsSchema.parse({ views: ["iso"], extra: true }),
+    );
+  });
+});
+
+describe("pixel brush batch contract", () => {
+  it("accepts bounded face-local brush paths", () => {
+    const value = paintPixelBatchParamsSchema.parse({
+      strokes: [
+        {
+          cube: "head",
+          face: "north",
+          color: "#ffffff",
+          points: [
+            { x: 1, y: 1 },
+            { x: 6, y: 3 },
+          ],
+          size: 2,
+          shape: "square",
+        },
+      ],
+    });
+    assert.equal(value.strokes.length, 1);
+  });
+
+  it("rejects fractional pixels and oversized brushes", () => {
+    assert.throws(() =>
+      paintPixelBatchParamsSchema.parse({
+        strokes: [
+          {
+            cube: "head",
+            face: "north",
+            color: "#fff",
+            points: [{ x: 0.5, y: 1 }],
+          },
+        ],
+      }),
+    );
+    assert.throws(() =>
+      paintPixelBatchParamsSchema.parse({
+        strokes: [
+          {
+            cube: "head",
+            face: "north",
+            color: "#fff",
+            points: [{ x: 1, y: 1 }],
+            size: 33,
+          },
+        ],
+      }),
     );
   });
 });

@@ -41,6 +41,16 @@ function envelope(
   };
 }
 
+function withoutImageData(result: unknown): unknown {
+  if (!result || typeof result !== "object") return result;
+  if (Array.isArray(result)) return result.map(withoutImageData);
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(result)) {
+    if (key !== "data_url") clean[key] = withoutImageData(value);
+  }
+  return clean;
+}
+
 function attachImages(
   base: { content: Content; isError?: boolean },
   result: unknown,
@@ -88,7 +98,11 @@ function listTools() {
       name: "health",
       description:
         "Plugin MCP status: listening, Blockbench version, current format.",
-      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   ];
   for (const [name, spec] of Object.entries(COMMAND_SPECS) as Array<
@@ -144,10 +158,13 @@ async function callTool(
 
   try {
     const result = await dispatchCommand(session, name, parsed.data);
-    const base = envelope(true, `OK: ${name}`, result);
-    return name === "capture_views" || name === "get_texture"
-      ? attachImages(base, result)
-      : base;
+    const hasImages = name === "capture_views" || name === "get_texture";
+    const base = envelope(
+      true,
+      `OK: ${name}`,
+      hasImages ? withoutImageData(result) : result,
+    );
+    return hasImages ? attachImages(base, result) : base;
   } catch (err) {
     const error =
       err && typeof err === "object" && "payload" in err

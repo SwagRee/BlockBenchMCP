@@ -47,32 +47,32 @@ Open Blockbench first, enable MCP, call `health`.
 AI client  --HTTP MCP-->  packages/plugin (inside Blockbench)
 ```
 
-| Package | Role |
-|---------|------|
-| `shared` | Zod, guides, tool contracts, tests |
+| Package  | Role                                             |
+| -------- | ------------------------------------------------ |
+| `shared` | Zod, guides, tool contracts, tests               |
 | `plugin` | Desktop plugin; in-process HTTP MCP + Host ports |
 
 Security: loopback only; Bearer required; file export needs `propose_scoped_directory` confirmation.
 
 ## Scope (v1)
 
-| Format | Priority |
-|--------|----------|
-| `java_block` | P0 |
-| `geckolib_model` (needs GeckoLib plugin) | P0 |
-| Bedrock entity / geo | P1 |
-| Generic free-model / mesh brush | Out of scope |
+| Format                                   | Priority     |
+| ---------------------------------------- | ------------ |
+| `java_block`                             | P0           |
+| `geckolib_model` (needs GeckoLib plugin) | P0           |
+| Bedrock entity / geo                     | P1           |
+| Generic free-model / mesh brush          | Out of scope |
 
 **Non-goals:** `trigger_action` / `emulate_clicks` / `risky_eval`, full paint UI, Hytale, etc.
 
 ## Main tools
 
-| Area | Tools |
-|------|-------|
-| Observe | `health`, `get_project_summary`, `check_model`, `capture_views` (compact by default), `get_guide` |
-| Geometry | `create_project`, `scaffold_biped`, `apply_geometry_batch`, `create_limb`, `mirror_elements` |
-| Texture | `ensure_texture`, `pack_box_uv`, `shade_model_base`, `paint_face_features`, `get_texture`, `auto_uv_cubes` |
-| Export | `propose_scoped_directory`, `export_model`, `upsert_animation` |
+| Area     | Tools                                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Observe  | `health`, `get_project_summary`, `check_model`, `capture_views` (native MCP image previews), `get_guide`                        |
+| Geometry | `create_project`, `scaffold_biped`, `apply_geometry_batch`, `create_limb`, `mirror_elements`                                    |
+| Texture  | `ensure_texture`, `pack_box_uv`, `shade_model_base`, `paint_face_features`, `paint_pixel_batch`, `get_texture`, `auto_uv_cubes` |
+| Export   | `propose_scoped_directory`, `export_model`, `upsert_animation`                                                                  |
 
 Mutations return explicit success/failure; unknown params hard-error. Prefer `check_model` over vision spam.
 
@@ -84,6 +84,11 @@ Mutations return explicit success/failure; unknown params hard-error. Prefer `ch
 4. Fix errors, then texture
 5. `pack_box_uv` → `shade_model_base` → `paint_face_features` (`pack_box_uv` / geometry follow project `uv_mode`: box vs per-face)
 6. `capture_views` only if needed
+
+`capture_views` and `get_texture` return native MCP image content so compatible
+clients can render previews directly. For crisp pixel work, `paint_pixel_batch`
+accepts multiple face-local paths with square or circle brushes, clips them to
+their UV faces by default, and commits the whole batch as one undo step.
 
 Check `uv_mode` on `health` / `get_project_summary`: `java_block` → face; Bedrock-style → box.
 

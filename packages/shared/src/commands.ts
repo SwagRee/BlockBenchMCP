@@ -19,6 +19,7 @@ import {
   getTextureParamsSchema,
   packBoxUvParamsSchema,
   paintFaceFeaturesParamsSchema,
+  paintPixelBatchParamsSchema,
   shadeModelBaseParamsSchema,
 } from "./contracts-texture.js";
 
@@ -57,13 +58,20 @@ export const COMMAND_SPECS = {
     params: z
       .object({
         topic: z
-          .enum(["modeling", "texturing", "animation", "java_block", "geckolib"])
+          .enum([
+            "modeling",
+            "texturing",
+            "animation",
+            "java_block",
+            "geckolib",
+          ])
           .optional(),
       })
       .strict(),
   },
   create_project: {
-    description: "Create java_block or geckolib_model project (closes nothing silently — requires format).",
+    description:
+      "Create java_block or geckolib_model project (closes nothing silently — requires format).",
     mutates: true,
     params: createProjectParamsSchema,
   },
@@ -86,7 +94,8 @@ export const COMMAND_SPECS = {
     params: scaffoldBipedParamsSchema,
   },
   ensure_texture: {
-    description: "Create or reuse a project texture (default 64×64 solid fill).",
+    description:
+      "Create or reuse a project texture (default 64×64 solid fill).",
     mutates: true,
     params: ensureTextureParamsSchema,
   },
@@ -114,7 +123,8 @@ export const COMMAND_SPECS = {
     params: mirrorElementsParamsSchema,
   },
   paint_face_feature: {
-    description: "Paint one rect/ellipse/fill in face-local UV space. Prefer paint_face_features for batches.",
+    description:
+      "Paint one rect/ellipse/fill in face-local UV space. Prefer paint_face_features for batches.",
     mutates: true,
     params: paintFaceFeatureParamsSchema,
   },
@@ -124,23 +134,33 @@ export const COMMAND_SPECS = {
     mutates: true,
     params: paintFaceFeaturesParamsSchema,
   },
+  paint_pixel_batch: {
+    description:
+      "Batch pixel brush paths in face-local UV space. Square/circle brushes, clipped to each face by default, in ONE undo.",
+    mutates: true,
+    params: paintPixelBatchParamsSchema,
+  },
   get_texture: {
-    description: "Inspect the texture sheet as a compact PNG data_url (default max_edge 256).",
+    description:
+      "Inspect the texture sheet as a compact PNG data_url (default max_edge 256).",
     mutates: false,
     params: getTextureParamsSchema,
   },
   upsert_animation: {
-    description: "Create/replace a simple bone animation clip (rotation/position keys).",
+    description:
+      "Create/replace a simple bone animation clip (rotation/position keys).",
     mutates: true,
     params: upsertAnimationParamsSchema,
   },
   propose_scoped_directory: {
-    description: "Ask user to allow session file access under an absolute directory.",
+    description:
+      "Ask user to allow session file access under an absolute directory.",
     mutates: false,
     params: z.object({ path: z.string().min(1) }).strict(),
   },
   export_model: {
-    description: "Save/export project into scoped directory. overwrite must be explicit.",
+    description:
+      "Save/export project into scoped directory. overwrite must be explicit.",
     mutates: false,
     params: z
       .object({

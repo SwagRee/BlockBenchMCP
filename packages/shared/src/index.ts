@@ -54,6 +54,7 @@ export {
   packBoxUvParamsSchema,
   shadeModelBaseParamsSchema,
   paintFaceFeaturesParamsSchema,
+  paintPixelBatchParamsSchema,
   getTextureParamsSchema,
 } from "./contracts-texture.js";
 
@@ -67,11 +68,7 @@ export {
   GUIDE_GECKOLIB,
 } from "./guides.js";
 
-export {
-  COMMAND_SPECS,
-  COMMAND_NAMES,
-  isCommandName,
-} from "./commands.js";
+export { COMMAND_SPECS, COMMAND_NAMES, isCommandName } from "./commands.js";
 export type { CommandSpec, CommandName } from "./commands.js";
 
 export {
@@ -83,11 +80,7 @@ export {
 } from "./capabilities.js";
 export type { CapabilityId } from "./capabilities.js";
 
-export {
-  UV_MODES,
-  uvModeSchema,
-  resolveUvModeFromHints,
-} from "./uv-mode.js";
+export { UV_MODES, uvModeSchema, resolveUvModeFromHints } from "./uv-mode.js";
 export type { UvMode } from "./uv-mode.js";
 
-export const PLUGIN_VERSION = "0.1.3";
+export const PLUGIN_VERSION = "0.1.4";

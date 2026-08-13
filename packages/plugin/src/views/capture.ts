@@ -18,7 +18,9 @@ export async function captureViews(params: CaptureViewsParams = {}): Promise<{
 }> {
   requireProject();
   const host = getHost();
-  const views = (params.views ?? [...captureViewsDefaults.views]) as ViewPreset[];
+  const views = (params.views ?? [
+    ...captureViewsDefaults.views,
+  ]) as ViewPreset[];
   const maxEdge = params.max_edge ?? captureViewsDefaults.max_edge;
   const format = params.format ?? captureViewsDefaults.format;
   const quality = (params.quality ?? captureViewsDefaults.quality) / 100;
@@ -34,50 +36,56 @@ export async function captureViews(params: CaptureViewsParams = {}): Promise<{
   for (const view of views) {
     const raw = await host.preview.capture(view, maxEdge);
     const compressed = await compress(raw, format, quality, maxEdge);
-    const mime = compressed.startsWith("data:image/jpeg")
+    const mime = compressed.dataUrl.startsWith("data:image/jpeg")
       ? "image/jpeg"
       : "image/png";
-    const b64 = compressed.split(",")[1] ?? "";
+    const b64 = compressed.dataUrl.split(",")[1] ?? "";
     out.push({
       view,
-      width: maxEdge,
-      height: maxEdge,
+      width: compressed.width,
+      height: compressed.height,
       bytes: Math.floor((b64.length * 3) / 4),
       mime,
-      data_url: compressed,
+      data_url: compressed.dataUrl,
     });
   }
   return { views: out };
 }
 
 function compress(
-  dataUrl: string,
+  source: { dataUrl: string; width: number; height: number },
   format: "jpeg" | "png",
   quality: number,
   maxEdge: number,
-): Promise<string> {
-  if (format === "png" && dataUrl.startsWith("data:image/png")) {
-    return Promise.resolve(dataUrl);
+): Promise<{ dataUrl: string; width: number; height: number }> {
+  if (format === "png" && source.dataUrl.startsWith("data:image/png")) {
+    return Promise.resolve(source);
   }
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = maxEdge;
-      canvas.height = maxEdge;
+      const width = img.naturalWidth || source.width;
+      const height = img.naturalHeight || source.height;
+      const scale = Math.min(1, maxEdge / Math.max(width, height, 1));
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve(dataUrl);
+        resolve(source);
         return;
       }
-      ctx.drawImage(img, 0, 0, maxEdge, maxEdge);
-      resolve(
-        format === "jpeg"
-          ? canvas.toDataURL("image/jpeg", quality)
-          : canvas.toDataURL("image/png"),
-      );
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve({
+        dataUrl:
+          format === "jpeg"
+            ? canvas.toDataURL("image/jpeg", quality)
+            : canvas.toDataURL("image/png"),
+        width: canvas.width,
+        height: canvas.height,
+      });
     };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
+    img.onerror = () => resolve(source);
+    img.src = source.dataUrl;
   });
 }

@@ -67,7 +67,10 @@ export interface FormatPort {
 }
 
 export interface PreviewPort {
-  capture: (view: string, size: number) => Promise<string>;
+  capture: (
+    view: string,
+    size: number,
+  ) => Promise<{ dataUrl: string; width: number; height: number }>;
 }
 
 export interface BbHost {

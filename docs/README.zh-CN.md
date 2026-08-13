@@ -47,32 +47,32 @@ npm install && npm run build
 AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 ```
 
-| 包 | 职责 |
-|----|------|
-| `shared` | Zod、指南、工具契约、测试 |
+| 包       | 职责                                         |
+| -------- | -------------------------------------------- |
+| `shared` | Zod、指南、工具契约、测试                    |
 | `plugin` | 桌面插件；内嵌 HTTP MCP + Host 端口调 BB API |
 
 安全：仅绑定 `127.0.0.1`；请求需 Bearer；文件导出前须 `propose_scoped_directory` 用户确认。
 
 ## 范围（v1）
 
-| 格式 | 优先级 |
-|------|--------|
-| `java_block` | P0 |
-| `geckolib_model`（需 GeckoLib 插件） | P0 |
-| Bedrock entity / geo | P1 |
-| 通用自由建模 / 网格刷子 | 不做 |
+| 格式                                 | 优先级 |
+| ------------------------------------ | ------ |
+| `java_block`                         | P0     |
+| `geckolib_model`（需 GeckoLib 插件） | P0     |
+| Bedrock entity / geo                 | P1     |
+| 通用自由建模 / 网格刷子              | 不做   |
 
 **不做：** `trigger_action` / `emulate_clicks` / `risky_eval`、完整画笔 UI、Hytale 等。
 
 ## 主要工具
 
-| 类别 | 工具 |
-|------|------|
-| 观察 | `health`、`get_project_summary`、`check_model`、`capture_views`（默认低分辨率）、`get_guide` |
-| 几何 | `create_project`、`scaffold_biped`、`apply_geometry_batch`、`create_limb`、`mirror_elements` |
-| 贴图 | `ensure_texture`、`pack_box_uv`、`shade_model_base`、`paint_face_features`、`get_texture`、`auto_uv_cubes` |
-| 导出 | `propose_scoped_directory`、`export_model`、`upsert_animation` |
+| 类别 | 工具                                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 观察 | `health`、`get_project_summary`、`check_model`、`capture_views`（原生 MCP 图片预览）、`get_guide`                               |
+| 几何 | `create_project`、`scaffold_biped`、`apply_geometry_batch`、`create_limb`、`mirror_elements`                                    |
+| 贴图 | `ensure_texture`、`pack_box_uv`、`shade_model_base`、`paint_face_features`、`paint_pixel_batch`、`get_texture`、`auto_uv_cubes` |
+| 导出 | `propose_scoped_directory`、`export_model`、`upsert_animation`                                                                  |
 
 突变工具显式返回成功/失败；未知参数硬报错，不静默丢弃。优先 `check_model`，少刷截图。
 
@@ -84,6 +84,10 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 4. 修完 error 再贴图
 5. `pack_box_uv` → `shade_model_base` → `paint_face_features`（按项目 `uv_mode` 自动选箱型或逐面）
 6. 需要时再 `capture_views`
+
+`capture_views` 和 `get_texture` 会返回原生 MCP 图片内容，兼容客户端可直接显示预览。
+精细像素绘制可使用 `paint_pixel_batch`：一次提交多条逐面路径，支持方形／圆形笔刷，
+默认裁剪在各自 UV 面内，并把整批操作合并为一次撤销。
 
 先看 `health` / `get_project_summary` 的 `uv_mode`：`java_block` 为逐面（face），Bedrock 类多为箱型（box）。
 
