@@ -23,7 +23,9 @@ Create Blockbench models with deliberate geometry and texture decisions. Treat e
 7. Write texture faces as palette-indexed grids. Compile them with `scripts/compile_texture_plan.py`; do not improvise large paint rectangles during fragile pixel work.
 8. Apply the texture plan, run `check_model`, and capture a useful preview.
 9. Compare the preview against the design contract or reference. Identify concrete defects by region, revise the grids, and repeat.
-10. Finish only when geometry checks pass and the material, silhouette, focal features, and light direction remain readable at a small preview size.
+10. For layered character geometry, capture `front`, `back`, `side`, and `iso` views after
+    the final geometry edit. Apply the six-face enclosure test in the pixel-art rules.
+11. Finish only when geometry checks pass and the material, silhouette, focal features, and light direction remain readable at a small preview size.
 
 ## Deterministic helpers
 
@@ -43,6 +45,9 @@ Create Blockbench models with deliberate geometry and texture decisions. Treat e
   the supporting face or offset outward by at least `0.1` Blockbench units; structural
   layers must meet at a boundary instead of occupying the same plane. Never waive this
   rule because z-fighting is absent from one camera angle or one GPU.
+- Treat `OVERLAP` as a prompt for coordinate inspection, not as a harmless informational
+  finding. Accept an overlap only after proving that every exposed face pair has at least
+  `0.1` units of depth ordering in all views where both parts can be visible.
 
 ## Iteration discipline
 

@@ -18,9 +18,13 @@
    projected areas overlap, compare all six face planes. No two visible faces may occupy
    the same plane. Paint flat decoration into the existing face; otherwise move the
    overlay outward by at least `0.1` units. Trim stacked shells so they meet at one boundary
-   rather than overlapping with duplicate exterior faces.
+   rather than overlapping with duplicate exterior faces. For characters, audit layered
+   clothing against every covered limb from front, back, and side; never infer safety from
+   checking only the front-facing Z plane.
 6. Run `check_model` before painting. Fix overlaps, zero-size cubes, bad pivots, and untextured faces.
    `check_model` returning zero errors does not replace the coordinate-level z-fighting audit.
+   For every `OVERLAP`, read both elements with `get_elements`, compare their transformed
+   bounds using the six-face enclosure test, and record why the overlap is safe or fix it.
 7. Capture two silhouette views. Texture cannot repair wrong proportions.
 
 ## Texture sequence
@@ -39,6 +43,8 @@
 ## Preview loop
 
 - Use an isometric view for overall form and a front or side view for focal details.
+- For layered characters, require front, back, side, and isometric views. A front/iso pair
+  cannot validate coat tails, capes, hair, backpacks, or rear armor.
 - Judge at both normal size and approximately 128 pixels tall.
 - Write defects as region + cause + correction, for example: `front legs merge because both inner edges use the same dark run; break the run and restore the base value`.
 - Change one layer at a time. Re-capture after every meaningful batch.

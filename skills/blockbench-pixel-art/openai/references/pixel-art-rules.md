@@ -29,6 +29,11 @@ Before building, record the subject and pose, three identifying silhouette featu
   meet at a boundary. Do not let their exterior faces share the same X, Y, or Z plane over
   an overlapping area. Intersections are allowed only when every potentially visible
   surface has a deliberate depth ordering of at least `0.1` units.
+- Treat coats, capes, skirts, hair, sleeves, cuffs, boots, and other layered wearables as
+  enclosing shells. Audit all exposed directions, not only the camera-facing side: an
+  outer garment must extend beyond the covered body or limb on every visible axis by at
+  least `0.1` units. In particular, check coat tails against both legs from the back and
+  side; matching rear Z planes or matching outer X planes are hard failures.
 - Do not rely on `inflate` to resolve coincident geometry; explicitly size the cubes so the
   separation survives export.
 - Use consistent thickness for paired parts, then introduce asymmetry only where it supports the design.
@@ -42,13 +47,38 @@ Before texturing and again before delivery:
    coordinate ranges overlap.
 3. Remove hidden duplicate faces where the format permits; otherwise trim, merge, or offset
    the responsible cube by at least `0.1` units.
-4. Check overlays, body/rail seams, lids, armor, eyes, decals, transparent layers, and mirrored
-   center seams explicitly. These are the common failure regions.
+4. Check overlays, body/rail seams, lids, armor, layered garments against limbs, hair against
+   the head, eyes, decals, transparent layers, and mirrored center seams explicitly. Inspect
+   both front and back plus one side; these are the common failure regions.
 5. Orbit or capture at least one oblique view after the coordinate audit. Any shimmer, moire,
    intermittent pixel row, or face-color switching fails the gate.
 
 Document every intentional intersection. `check_model` overlap findings may be accepted only
 when the exposed faces have distinct depth ordering and cannot become coplanar during animation.
+
+### Six-face enclosure test for layered parts
+
+Apply this test to each outer/inner pair such as coat/leg, cape/body, hair/head, cuff/arm,
+boot/leg, armor/body, or decal/support:
+
+1. Record both cubes' `from` and `to` bounds after transforms. Do not judge from the editor grid.
+2. Identify which outer faces can remain visible while the inner part occupies the same
+   projected region.
+3. For every such direction, require the outer bound to pass the inner bound by at least
+   `0.1`: `outer.minX <= inner.minX - 0.1`, `outer.maxX >= inner.maxX + 0.1`, and likewise
+   for Y and Z where that shell is meant to cover the inner part.
+4. If the outer layer should not enclose a direction, trim it so the two parts stop
+   overlapping there. Never leave equal bounds and assume the hidden face will not render.
+5. For split garments, test every panel against every limb it overlaps. A left and right
+   coat tail must each be checked against its corresponding leg; checking the torso alone
+   is insufficient.
+6. Re-read the edited bounds, then capture front, back, one side, and isometric views.
+   Reject colored speckle, striped noise, moire, intermittent pixels, or switching face
+   colors at any seam.
+
+Example: if a leg spans `Z=-2..2`, a coat tail covering both front and back must use at
+least `Z=-2.1..2.1`; using `Z=-1.9..2` still leaves the rear faces coincident and will
+z-fight even when the front view looks clean.
 
 ## Palette and value structure
 
