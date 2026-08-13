@@ -25,6 +25,8 @@ describe("generation smoke contract", () => {
       "paint_face_grid",
       "analyze_texture_palette",
       "get_texture_region",
+      "get_texture_revision",
+      "audit_texture_quality",
       "shade_model_base",
       "paint_face_features",
       "paint_pixel_batch",
@@ -44,6 +46,8 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("copy_face_pixels"));
     assert.ok(COMMAND_NAMES.includes("import_texture_png"));
     assert.ok(COMMAND_NAMES.includes("export_texture_png"));
+    assert.ok(COMMAND_NAMES.includes("flood_fill_texture"));
+    assert.ok(COMMAND_NAMES.includes("transform_texture_region"));
   });
 
   it("exposes a complete safe read-modify-manage loop", () => {

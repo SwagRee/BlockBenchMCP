@@ -34,11 +34,12 @@ export const GUIDE_TEXTURING = `
 1. ensure_texture (64 entities / 16 blocks), then pack_box_uv. Subset packing preserves other islands by default; auto-resize uses power-of-two atlases.
 2. get_uv_layout before painting. Require summary.out_of_bounds=0 and review every overlap; compare density across related faces.
 3. get_uv_map to visually verify island placement, face orientation, flips, and rotation.
-4. Author exact face-sized palette grids with paint_face_grid; use get_face_grid for lossless read-modify-write. null palette entries erase to transparent.
-5. Use paint_face_features / paint_pixel_batch for accents, edit_texture_pixels for surgical RGBA edits, replace_texture_color for palette revisions, and copy_face_pixels for mirrored parts.
-6. Run analyze_texture_palette. Prefer 4–8 intentional colors and a 60–80% stable material base. For a generated base, shade_model_base(seed, crisp:true) is deterministic.
-7. Inspect get_texture_region(face, scale:8+, grid:true), get_uv_map, and model views. Fix gaps and re-check_model.
-8. PNG import/export requires propose_scoped_directory and stays inside that user-approved folder. Use resize_texture when bitmap and UVs must scale together.
+4. Optional fast base: shade_model_base(seed, crisp:true, noise:0, blur:0). For authored work, call get_texture_revision before a long edit and pass expected_revision to precision mutations so stale plans cannot overwrite newer paint.
+5. Author exact face-sized grids with paint_face_grid; get_face_grid returns lossless RGBA plus the same snapshot revision for read-modify-write.
+6. Use paint_face_features / paint_pixel_batch for accents, edit_texture_pixels for surgical RGBA edits, replace_texture_color for palette revisions, and copy_face_pixels for mirrored parts.
+7. Use flood_fill_texture only with a face or a conservative max_pixels; use transform_texture_region for lossless flips/turns. Run analyze_texture_palette and audit_texture_quality (glass:true for transparent materials).
+8. Prefer 4–8 intentional colors and a 60–80% stable material base. Inspect get_texture_region(face, scale:8+, grid:true), get_uv_map, and model views. Fix findings and re-check_model.
+9. PNG import/export requires propose_scoped_directory and stays inside that user-approved folder. Use resize_texture when bitmap and UVs must scale together.
 `.trim();
 
 export const GUIDE_ANIMATION = `

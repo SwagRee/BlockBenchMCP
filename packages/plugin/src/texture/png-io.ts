@@ -7,6 +7,10 @@ import {
   writeScopedBinary,
 } from "../commands/scope-export.js";
 import { requireTextureHandle } from "../paint/texture-pixels.js";
+import {
+  assertTextureRevision,
+  textureRevision,
+} from "../paint/texture-revision.js";
 
 function base64(bytes: Uint8Array): string {
   let binary = "";
@@ -43,6 +47,7 @@ export async function importTexturePng(
     texture?: string;
     name?: string;
     resize_project?: boolean;
+    expected_revision?: string;
   },
 ): Promise<{
   ok: true;
@@ -51,6 +56,7 @@ export async function importTexturePng(
   uuid: string;
   size: [number, number];
   bytes: number;
+  revision: string;
 }> {
   requireProject();
   const bytes = readScopedBinary(session, opts.path);
@@ -59,9 +65,10 @@ export async function importTexturePng(
   const existing = opts.texture ? host.textures.find(opts.texture) : undefined;
   if (opts.texture && !existing)
     throw new CommandError("E_NOT_FOUND", `Texture not found: ${opts.texture}`);
+  if (existing) await assertTextureRevision(existing, opts.expected_revision);
   const oldWidth = Project?.texture_width;
   const oldHeight = Project?.texture_height;
-  return host.undo.run(
+  const result = host.undo.run(
     { textures: existing ? [existing] : [], bitmap: true, uv_mode: true },
     "import_texture_png",
     (track) => {
@@ -99,6 +106,13 @@ export async function importTexturePng(
       };
     },
   );
+  const imported = host.textures.find(result.uuid);
+  if (!imported)
+    throw new CommandError(
+      "E_BLOCKBENCH_ERROR",
+      "Imported texture disappeared",
+    );
+  return { ...result, revision: await textureRevision(imported) };
 }
 
 export function exportTexturePng(

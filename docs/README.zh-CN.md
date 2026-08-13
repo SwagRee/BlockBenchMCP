@@ -67,15 +67,15 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 
 ## 主要工具
 
-| 类别      | 工具                                                                                                                                                                                                                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                                                                                                                          |
-| 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                                                                                                                                   |
-| 项目      | `create_project`、`set_project_meta`                                                                                                                                                                                                                                                  |
-| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                                                                                                                         |
-| UV 与贴图 | `ensure_texture`、`pack_box_uv`、`get_uv_layout`、`get_uv_map`、`paint_face_grid`、`get_face_grid`、`edit_texture_pixels`、`replace_texture_color`、`copy_face_pixels`、`analyze_texture_palette`、`get_texture_region`、`resize_texture`、`import_texture_png`、`export_texture_png` |
-| 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                                                                                                                             |
-| 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                                                                                                                            |
+| 类别      | 工具                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 发现      | `health`、`list_formats`、`get_project_summary`、`get_elements`、`get_guide`                                                                                                                                                                                                                                                                                                             |
+| 检查      | `check_model`、`capture_views`（原生 MCP 图片预览）                                                                                                                                                                                                                                                                                                                                      |
+| 项目      | `create_project`、`set_project_meta`                                                                                                                                                                                                                                                                                                                                                     |
+| 几何      | `scaffold_biped`、`apply_geometry_batch`、`update_elements`、`create_limb`、`mirror_elements`                                                                                                                                                                                                                                                                                            |
+| UV 与贴图 | `ensure_texture`、`pack_box_uv`、`get_uv_layout`、`get_uv_map`、`paint_face_grid`、`get_face_grid`、`get_texture_revision`、`edit_texture_pixels`、`flood_fill_texture`、`transform_texture_region`、`replace_texture_color`、`copy_face_pixels`、`analyze_texture_palette`、`audit_texture_quality`、`get_texture_region`、`resize_texture`、`import_texture_png`、`export_texture_png` |
+| 动画      | `upsert_animation`、`list_animations`、`delete_animation`                                                                                                                                                                                                                                                                                                                                |
+| 文件      | `propose_scoped_directory`、`save_project`、`export_model`                                                                                                                                                                                                                                                                                                                               |
 
 突变工具显式返回成功/失败；未知参数硬报错，不静默丢弃。优先 `check_model`，少刷截图。
 
@@ -105,6 +105,11 @@ AI 客户端  --HTTP MCP-->  packages/plugin（Blockbench 内）
 也可用 `null` 执行真正的透明擦除。`get_face_grid` 会按同一逐面方向无损读回 RGBA 像素。
 此外还支持逐像素修补、容差替色、面贴图复制／镜像／旋转、调色板统计和带棋盘格的像素级放大预览。
 PNG 导入导出只能访问经 `propose_scoped_directory` 明确确认的目录。
+
+长流程可先调用 `get_texture_revision`，再把令牌作为 `expected_revision` 传给破坏性贴图操作；
+若贴图已被其他操作更新，将拒绝旧方案覆盖。新增受限洪泛填充和无插值逐面／区域变换，
+用于封闭区域、对称与方向修正。`audit_texture_quality` 会逐面检查调色板膨胀、底色占比、孤立噪点、
+纯平填充；开启 `glass:true` 后还会检查透明材质边缘与中心的 Alpha 结构。
 
 先看 `health` / `get_project_summary` 的 `uv_mode`：`java_block` 为逐面（face），Bedrock 类多为箱型（box）。
 

@@ -28,6 +28,10 @@ import {
   getTextureRegionParamsSchema,
   importTexturePngParamsSchema,
   exportTexturePngParamsSchema,
+  getTextureRevisionParamsSchema,
+  floodFillTextureParamsSchema,
+  transformTextureRegionParamsSchema,
+  auditTextureQualityParamsSchema,
   setFaceUvParamsSchema,
   setProjectMetaParamsSchema,
   updateElementsParamsSchema,
@@ -215,6 +219,52 @@ describe("precision texture contracts", () => {
       getTextureRegionParamsSchema.parse({
         face: { cube: "head", face: "north" },
         rect: [0, 0, 8, 8],
+      }),
+    );
+  });
+});
+
+describe("safe iterative texture contracts", () => {
+  it("supports revision guards, bounded fills, transforms, and quality gates", () => {
+    getTextureRevisionParamsSchema.parse({ texture: "skin" });
+    floodFillTextureParamsSchema.parse({
+      texture: "skin",
+      expected_revision: "fnv1a32:12345678",
+      face: { cube: "head", face: "north" },
+      x: 1,
+      y: 1,
+      color: "rgba(0,0,0,.5)",
+      tolerance: 8,
+      max_pixels: 64,
+    });
+    transformTextureRegionParamsSchema.parse({
+      rect: [0, 0, 8, 8],
+      operation: "rotate_90",
+    });
+    auditTextureQualityParamsSchema.parse({
+      palette_limit: 8,
+      min_base_ratio: 0.6,
+      glass: true,
+    });
+  });
+
+  it("rejects ambiguous transforms and unbounded fill sizes", () => {
+    assert.throws(() =>
+      transformTextureRegionParamsSchema.parse({ operation: "flip_x" }),
+    );
+    assert.throws(() =>
+      transformTextureRegionParamsSchema.parse({
+        face: { cube: "head", face: "north" },
+        rect: [0, 0, 8, 8],
+        operation: "flip_x",
+      }),
+    );
+    assert.throws(() =>
+      floodFillTextureParamsSchema.parse({
+        x: 0,
+        y: 0,
+        color: null,
+        max_pixels: 100000,
       }),
     );
   });

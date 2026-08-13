@@ -39,6 +39,12 @@ import {
   getTextureRegion,
 } from "./paint/texture-inspect.js";
 import { exportTexturePng, importTexturePng } from "./texture/png-io.js";
+import { getTextureRevision } from "./paint/texture-revision.js";
+import {
+  floodFillTexture,
+  transformTextureRegion,
+} from "./paint/texture-ops.js";
+import { auditTextureQuality } from "./paint/texture-quality.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 import {
@@ -126,6 +132,10 @@ export async function dispatchCommand(
         return await getTextureRegion((params ?? {}) as never);
       case "analyze_texture_palette":
         return await analyzeTexturePalette((params ?? {}) as never);
+      case "get_texture_revision":
+        return await getTextureRevision((params ?? {}) as never);
+      case "audit_texture_quality":
+        return await auditTextureQuality((params ?? {}) as never);
       case "set_face_uv":
         return setFaceUv((params ?? {}) as never);
       case "pack_box_uv":
@@ -150,6 +160,10 @@ export async function dispatchCommand(
         return replaceTextureColor((params ?? {}) as never);
       case "copy_face_pixels":
         return await copyFacePixels((params ?? {}) as never);
+      case "flood_fill_texture":
+        return await floodFillTexture((params ?? {}) as never);
+      case "transform_texture_region":
+        return await transformTextureRegion((params ?? {}) as never);
       case "import_texture_png":
         return await importTexturePng(session, (params ?? {}) as never);
       case "export_texture_png":

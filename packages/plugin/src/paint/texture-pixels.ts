@@ -7,6 +7,11 @@ import {
   resolveFaceSpace,
   type FaceSpace,
 } from "./face-space.js";
+import {
+  assertTextureRevision,
+  revisionFromPixels,
+  textureRevision,
+} from "./texture-revision.js";
 
 type FaceRef = { cube: string; face: string };
 type Rgba = [number, number, number, number];
@@ -97,13 +102,21 @@ function assertGrid(rows: string[], space: FaceSpace): string[][] {
   return grid;
 }
 
-export function paintFaceGrid(opts: {
+export async function paintFaceGrid(opts: {
   texture?: string;
+  expected_revision?: string;
   faces: Array<FaceRef & { rows: string[] }>;
   palette: Record<string, string | null>;
-}): { ok: true; undo_label: string; faces: number; pixels: number } {
+}): Promise<{
+  ok: true;
+  undo_label: string;
+  faces: number;
+  pixels: number;
+  revision: string;
+}> {
   requireProject();
   const tex = texture(opts.texture);
+  await assertTextureRevision(tex, opts.expected_revision);
   const palette = new Map<string, Rgba>();
   for (const [symbol, color] of Object.entries(opts.palette)) {
     if (Array.from(symbol).length !== 1) {
@@ -123,7 +136,7 @@ export function paintFaceGrid(opts: {
     };
   });
   let count = 0;
-  return getHost().undo.run(
+  const result = getHost().undo.run(
     {
       elements: jobs.map((j) => j.cube),
       textures: [tex],
@@ -168,6 +181,7 @@ export function paintFaceGrid(opts: {
       };
     },
   );
+  return { ...result, revision: await textureRevision(tex) };
 }
 
 export async function getFaceGrid(
@@ -178,6 +192,7 @@ export async function getFaceGrid(
   width: number;
   height: number;
   rows: string[][];
+  revision: string;
 }> {
   requireProject();
   const tex = texture(opts.texture);
@@ -201,23 +216,31 @@ export async function getFaceGrid(
     width: space.width,
     height: space.height,
     rows,
+    revision: revisionFromPixels(image.data, image.width, image.height),
   };
 }
 
-export function editTexturePixels(opts: {
+export async function editTexturePixels(opts: {
   texture?: string;
+  expected_revision?: string;
   face?: FaceRef;
   pixels: Array<{ x: number; y: number; color: string | null }>;
-}): { ok: true; undo_label: string; changed: number } {
+}): Promise<{
+  ok: true;
+  undo_label: string;
+  changed: number;
+  revision: string;
+}> {
   requireProject();
   const tex = texture(opts.texture);
+  await assertTextureRevision(tex, opts.expected_revision);
   const target = opts.face ? faceSpace(opts.face) : undefined;
   const colors = opts.pixels.map((p) => ({
     ...p,
     rgba: p.color === null ? ([0, 0, 0, 0] as Rgba) : parseColor(p.color),
   }));
   let changed = 0;
-  return getHost().undo.run(
+  const result = getHost().undo.run(
     { textures: [tex], bitmap: true },
     "edit_texture_pixels",
     (track) => {
@@ -251,17 +274,25 @@ export function editTexturePixels(opts: {
       return { ok: true as const, undo_label: "edit_texture_pixels", changed };
     },
   );
+  return { ...result, revision: await textureRevision(tex) };
 }
 
-export function replaceTextureColor(opts: {
+export async function replaceTextureColor(opts: {
   texture?: string;
+  expected_revision?: string;
   face?: FaceRef;
   from: string;
   to: string | null;
   tolerance?: number;
-}): { ok: true; undo_label: string; replaced: number } {
+}): Promise<{
+  ok: true;
+  undo_label: string;
+  replaced: number;
+  revision: string;
+}> {
   requireProject();
   const tex = texture(opts.texture);
+  await assertTextureRevision(tex, opts.expected_revision);
   const target = opts.face ? faceSpace(opts.face) : undefined;
   const from = parseColor(opts.from);
   const to = opts.to === null ? ([0, 0, 0, 0] as Rgba) : parseColor(opts.to);
@@ -269,7 +300,7 @@ export function replaceTextureColor(opts: {
   let replaced = 0;
   const matches = (p: Rgba) =>
     p.every((value, i) => Math.abs(value - from[i]) <= tolerance);
-  return getHost().undo.run(
+  const result = getHost().undo.run(
     { textures: [tex], bitmap: true },
     "replace_texture_color",
     (track) => {
@@ -299,18 +330,26 @@ export function replaceTextureColor(opts: {
       };
     },
   );
+  return { ...result, revision: await textureRevision(tex) };
 }
 
 export async function copyFacePixels(opts: {
   texture?: string;
+  expected_revision?: string;
   source: FaceRef;
   target: FaceRef;
   flip_x?: boolean;
   flip_y?: boolean;
   rotation?: "0" | "90" | "180" | "270";
-}): Promise<{ ok: true; undo_label: string; pixels: number }> {
+}): Promise<{
+  ok: true;
+  undo_label: string;
+  pixels: number;
+  revision: string;
+}> {
   requireProject();
   const tex = texture(opts.texture);
+  await assertTextureRevision(tex, opts.expected_revision);
   const source = faceSpace(opts.source);
   const target = faceSpace(opts.target);
   const rotation = Number(opts.rotation ?? "0");
@@ -334,7 +373,7 @@ export async function copyFacePixels(opts: {
       row.push(pixel(snapshot, ...faceLocalToAtlas(source.space, x, y)));
     colors.push(row);
   }
-  return getHost().undo.run(
+  const result = getHost().undo.run(
     { textures: [tex], bitmap: true },
     "copy_face_pixels",
     (track) => {
@@ -375,6 +414,7 @@ export async function copyFacePixels(opts: {
       };
     },
   );
+  return { ...result, revision: await textureRevision(tex) };
 }
 
 export {

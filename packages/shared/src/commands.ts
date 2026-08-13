@@ -33,6 +33,10 @@ import {
   getTextureRegionParamsSchema,
   importTexturePngParamsSchema,
   exportTexturePngParamsSchema,
+  getTextureRevisionParamsSchema,
+  floodFillTextureParamsSchema,
+  transformTextureRegionParamsSchema,
+  auditTextureQualityParamsSchema,
 } from "./contracts-texture.js";
 import {
   assignTextureParamsSchema,
@@ -190,6 +194,18 @@ export const COMMAND_SPECS = {
     mutates: false,
     params: analyzeTexturePaletteParamsSchema,
   },
+  get_texture_revision: {
+    description:
+      "Return a deterministic bitmap revision token for conflict-safe read-modify-write workflows.",
+    mutates: false,
+    params: getTextureRevisionParamsSchema,
+  },
+  audit_texture_quality: {
+    description:
+      "Audit per-face palette size, dominant base ratio, isolated pixels, flat fills, and optional glass alpha structure.",
+    mutates: false,
+    params: auditTextureQualityParamsSchema,
+  },
   set_face_uv: {
     description:
       "Set exact per-face UV rectangles and optional quarter-turn rotation for multiple cube faces in ONE undo.",
@@ -260,6 +276,18 @@ export const COMMAND_SPECS = {
       "Copy face pixels to another face with optional mirror and quarter-turn rotation.",
     mutates: true,
     params: copyFacePixelsParamsSchema,
+  },
+  flood_fill_texture: {
+    description:
+      "Flood-fill a bounded face-local or atlas region with tolerance, transparency, and pixel caps.",
+    mutates: true,
+    params: floodFillTextureParamsSchema,
+  },
+  transform_texture_region: {
+    description:
+      "Flip or quarter-turn a full face or bounded atlas region without resampling.",
+    mutates: true,
+    params: transformTextureRegionParamsSchema,
   },
   import_texture_png: {
     description:

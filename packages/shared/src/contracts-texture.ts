@@ -166,6 +166,7 @@ const faceTargetSchema = z
 export const paintFaceGridParamsSchema = z
   .object({
     texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
     faces: z
       .array(
         faceTargetSchema.extend({
@@ -187,6 +188,7 @@ export const getFaceGridParamsSchema = faceTargetSchema
 export const editTexturePixelsParamsSchema = z
   .object({
     texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
     face: faceTargetSchema.optional(),
     pixels: z
       .array(
@@ -206,6 +208,7 @@ export const editTexturePixelsParamsSchema = z
 export const replaceTextureColorParamsSchema = z
   .object({
     texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
     face: faceTargetSchema.optional(),
     from: z.string().min(1),
     to: z.string().min(1).nullable(),
@@ -216,6 +219,7 @@ export const replaceTextureColorParamsSchema = z
 export const copyFacePixelsParamsSchema = z
   .object({
     texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
     source: faceTargetSchema,
     target: faceTargetSchema,
     flip_x: z.boolean().optional(),
@@ -262,6 +266,61 @@ export const importTexturePngParamsSchema = z
     texture: z.string().optional(),
     name: z.string().min(1).optional(),
     resize_project: z.boolean().optional(),
+    expected_revision: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const getTextureRevisionParamsSchema = z
+  .object({ texture: z.string().optional() })
+  .strict();
+
+export const floodFillTextureParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
+    face: faceTargetSchema.optional(),
+    x: z.number().int().nonnegative(),
+    y: z.number().int().nonnegative(),
+    color: z.string().min(1).nullable(),
+    tolerance: z.number().int().min(0).max(255).optional(),
+    diagonal: z.boolean().optional(),
+    max_pixels: z.number().int().positive().max(65536).optional(),
+  })
+  .strict();
+
+export const transformTextureRegionParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    expected_revision: z.string().min(1).optional(),
+    face: faceTargetSchema.optional(),
+    rect: z
+      .tuple([
+        z.number().int().nonnegative(),
+        z.number().int().nonnegative(),
+        z.number().int().positive(),
+        z.number().int().positive(),
+      ])
+      .optional(),
+    operation: z.enum([
+      "flip_x",
+      "flip_y",
+      "rotate_180",
+      "rotate_90",
+      "rotate_270",
+    ]),
+  })
+  .strict()
+  .refine((value) => Boolean(value.face) !== Boolean(value.rect), {
+    message: "Choose exactly one of face or rect",
+  });
+
+export const auditTextureQualityParamsSchema = z
+  .object({
+    texture: z.string().optional(),
+    faces: z.array(faceTargetSchema).max(256).optional(),
+    palette_limit: z.number().int().positive().max(256).optional(),
+    min_base_ratio: z.number().min(0).max(1).optional(),
+    glass: z.boolean().optional(),
   })
   .strict();
 
