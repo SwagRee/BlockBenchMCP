@@ -67,15 +67,15 @@ Security: loopback only; Bearer required; file export needs `propose_scoped_dire
 
 ## Main tools
 
-| Area         | Tools                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                                                                                                                                                                                                                             |
-| Review       | `check_model`, `capture_views` (native MCP image previews)                                                                                                                                                                                                                                                                                                                               |
-| Project      | `create_project`, `set_project_meta`                                                                                                                                                                                                                                                                                                                                                     |
-| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `transform_elements`, `array_cubes`, `measure_model`, `audit_symmetry`, `create_limb`, `mirror_elements`                                                                                                                                                                                                                    |
-| UV & texture | `ensure_texture`, `pack_box_uv`, `get_uv_layout`, `get_uv_map`, `paint_face_grid`, `get_face_grid`, `get_texture_revision`, `edit_texture_pixels`, `flood_fill_texture`, `transform_texture_region`, `replace_texture_color`, `copy_face_pixels`, `analyze_texture_palette`, `audit_texture_quality`, `get_texture_region`, `resize_texture`, `import_texture_png`, `export_texture_png` |
-| Animation    | `upsert_animation`, `list_animations`, `delete_animation`                                                                                                                                                                                                                                                                                                                                |
-| Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                                                                                                                                                                                                                               |
+| Area         | Tools                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discover     | `health`, `list_formats`, `get_project_summary`, `get_elements`, `get_guide`                                                                                                                                                                                                                                                                                                                            |
+| Review       | `check_model`, `capture_views`, `analyze_view_silhouette`                                                                                                                                                                                                                                                                                                                                               |
+| Project      | `create_project`, `set_project_meta`                                                                                                                                                                                                                                                                                                                                                                    |
+| Geometry     | `scaffold_biped`, `apply_geometry_batch`, `update_elements`, `transform_elements`, `array_cubes`, `radial_array_cubes`, `duplicate_hierarchy`, `measure_model`, `audit_symmetry`, `create_limb`, `mirror_elements`                                                                                                                                                                                      |
+| UV & texture | `ensure_texture`, `ensure_material_set`, `audit_material_set`, `pack_box_uv`, `get_uv_layout`, `get_uv_map`, `transform_uv_islands`, `paint_face_grid`, `get_face_grid`, `get_texture_revision`, `edit_texture_pixels`, `flood_fill_texture`, `transform_texture_region`, `replace_texture_color`, `copy_face_pixels`, `analyze_texture_palette`, `audit_texture_quality`, `get_texture_region`, PNG IO |
+| Animation    | `inspect_animation`, `upsert_animation`, `transform_animation_keys`, `list_animations`, `delete_animation`                                                                                                                                                                                                                                                                                              |
+| Files        | `propose_scoped_directory`, `save_project`, `export_model`                                                                                                                                                                                                                                                                                                                                              |
 
 Mutations return explicit success/failure; unknown params hard-error. Prefer `check_model` over vision spam.
 
@@ -91,6 +91,12 @@ Iterative modeling no longer requires recomputing every absolute coordinate:
 while `audit_symmetry` reports left/right coordinate error. Dimension changes can choose
 `uv_policy: preserve|auto`; re-check the UV layout before painting.
 
+Advanced iteration adds rotation- and parent-hierarchy-aware world bounds, radial arrays,
+deep hierarchy duplication, island-level UV transforms, and explicit intentional-overlap declarations. `ensure_material_set` creates channel sheets and `audit_material_set` validates
+base/emissive/normal/specular channel consistency without pretending Blockbench formats all
+export the same material semantics. `analyze_view_silhouette` turns multi-view captures into
+numeric bounds and coverage, while animation keys can be inspected, retimed, scaled, or mirrored.
+
 ## Workflow
 
 1. `get_guide(modeling)`
@@ -99,6 +105,11 @@ while `audit_symmetry` reports left/right coordinate error. Dimension changes ca
 4. Fix errors, then texture
 5. `pack_box_uv` → `get_uv_layout` (zero out-of-bounds; review overlaps/density) → `get_uv_map` → paint → `get_texture` / `capture_views`
 6. `capture_views` only if needed
+
+For a real Blockbench integration gate, open a disposable project with the plugin loaded and run
+`npm run test:e2e`. The command requires an explicit disposable confirmation and performs a live
+create → geometry → UV → paint → audit → multi-view sequence; it is intentionally separate from
+the deterministic unit suite.
 
 `capture_views` and `get_texture` return native MCP image content so compatible
 clients can render previews directly. For crisp pixel work, `paint_pixel_batch`

@@ -63,6 +63,26 @@ export const checkModelResultSchema = z
 
 export type CheckModelResult = z.infer<typeof checkModelResultSchema>;
 
+const checkFaceTargetSchema = z
+  .object({
+    cube: z.string().min(1),
+    face: z.enum(["north", "south", "east", "west", "up", "down"]),
+  })
+  .strict();
+
+export const checkModelParamsSchema = z
+  .object({
+    allowed_uv_overlaps: z
+      .array(
+        z
+          .object({ a: checkFaceTargetSchema, b: checkFaceTargetSchema })
+          .strict(),
+      )
+      .max(256)
+      .optional(),
+  })
+  .strict();
+
 export const captureViewsParamsSchema = z
   .object({
     views: z.array(z.enum(VIEW_PRESETS)).min(1).optional(),

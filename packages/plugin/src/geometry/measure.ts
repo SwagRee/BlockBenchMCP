@@ -1,13 +1,11 @@
 import { findElement, requireProject } from "../bb/elements.js";
 import { CommandError } from "../errors.js";
+import { cubeWorldBounds, geometricCubeVolume } from "./spatial.js";
 
 type Bounds = { min: [number, number, number]; max: [number, number, number] };
 
 function cubeBounds(cube: Cube): Bounds {
-  return {
-    min: cube.from.map((v, i) => Math.min(v, cube.to[i])) as Bounds["min"],
-    max: cube.from.map((v, i) => Math.max(v, cube.to[i])) as Bounds["max"],
-  };
+  return cubeWorldBounds(cube);
 }
 
 function descendantCubes(group: Group): Cube[] {
@@ -59,12 +57,7 @@ export function measureModel(opts: { refs?: string[] }): {
       max,
       size: min.map((v, i) => max[i] - v),
       center: min.map((v, i) => (v + max[i]) / 2),
-      volume: boxes.reduce(
-        (sum, b) =>
-          sum +
-          (b.max[0] - b.min[0]) * (b.max[1] - b.min[1]) * (b.max[2] - b.min[2]),
-        0,
-      ),
+      volume: cubes.reduce((sum, cube) => sum + geometricCubeVolume(cube), 0),
     };
   });
   const boxes = rows.filter((r) => r.cubes > 0);
@@ -88,16 +81,10 @@ export function measureModel(opts: { refs?: string[] }): {
       center: min.map((v, i) => (v + max[i]) / 2),
     },
     cubes: uniqueCubes.size,
-    total_volume: [...uniqueCubes.values()]
-      .map(cubeBounds)
-      .reduce(
-        (sum, box) =>
-          sum +
-          (box.max[0] - box.min[0]) *
-            (box.max[1] - box.min[1]) *
-            (box.max[2] - box.min[2]),
-        0,
-      ),
+    total_volume: [...uniqueCubes.values()].reduce(
+      (sum, cube) => sum + geometricCubeVolume(cube),
+      0,
+    ),
     elements: rows,
   };
 }

@@ -48,6 +48,17 @@ import { auditTextureQuality } from "./paint/texture-quality.js";
 import { transformElements } from "./geometry/transform.js";
 import { arrayCubes } from "./geometry/array.js";
 import { auditSymmetry, measureModel } from "./geometry/measure.js";
+import {
+  duplicateHierarchy,
+  radialArrayCubes,
+} from "./geometry/advanced-array.js";
+import { transformUvIslands } from "./paint/uv-transform.js";
+import { auditMaterialSet, ensureMaterialSet } from "./texture/material-set.js";
+import { analyzeViewSilhouette } from "./views/silhouette.js";
+import {
+  inspectAnimation,
+  transformAnimationKeys,
+} from "./commands/animation-edit.js";
 import { requireProject } from "./bb/elements.js";
 import { resolveGuide, type ProjectFormat } from "@blockbench-mcp/shared";
 import {
@@ -80,12 +91,14 @@ export async function dispatchCommand(
         return measureModel((params ?? {}) as never);
       case "audit_symmetry":
         return auditSymmetry((params ?? {}) as never);
+      case "analyze_view_silhouette":
+        return await analyzeViewSilhouette((params ?? {}) as never);
       case "list_textures":
         return { textures: listTextures() };
       case "list_animations":
         return { animations: listAnimations() };
       case "check_model":
-        return runCheckModel();
+        return runCheckModel((params ?? {}) as never);
       case "capture_views":
         return await captureViews((params ?? {}) as never);
       case "get_guide":
@@ -121,6 +134,10 @@ export async function dispatchCommand(
         return transformElements((params ?? {}) as never);
       case "array_cubes":
         return arrayCubes((params ?? {}) as never);
+      case "radial_array_cubes":
+        return radialArrayCubes((params ?? {}) as never);
+      case "duplicate_hierarchy":
+        return duplicateHierarchy((params ?? {}) as never);
       case "create_limb": {
         const r = createLimb((params ?? {}) as never);
         return { ok: true, undo_label: "create_limb", ...r };
@@ -149,6 +166,8 @@ export async function dispatchCommand(
         return await auditTextureQuality((params ?? {}) as never);
       case "set_face_uv":
         return setFaceUv((params ?? {}) as never);
+      case "transform_uv_islands":
+        return transformUvIslands((params ?? {}) as never);
       case "pack_box_uv":
         return packBoxUv((params ?? {}) as never);
       case "resize_texture":
@@ -183,8 +202,16 @@ export async function dispatchCommand(
         return getTexture((params ?? {}) as never);
       case "assign_texture":
         return assignTexture((params ?? {}) as never);
+      case "audit_material_set":
+        return auditMaterialSet((params ?? {}) as never);
+      case "ensure_material_set":
+        return ensureMaterialSet((params ?? {}) as never);
+      case "inspect_animation":
+        return inspectAnimation((params ?? {}) as never);
       case "upsert_animation":
         return upsertAnimation((params ?? {}) as never);
+      case "transform_animation_keys":
+        return transformAnimationKeys((params ?? {}) as never);
       case "delete_animation":
         return deleteAnimation((params ?? {}) as never);
       case "propose_scoped_directory":

@@ -10,6 +10,7 @@ import {
   applyGeometryBatchParamsSchema,
   captureViewsDefaults,
   captureViewsParamsSchema,
+  checkModelParamsSchema,
   createLimbParamsSchema,
   isCommandName,
   makeError,
@@ -39,6 +40,14 @@ import {
   arrayCubesParamsSchema,
   measureModelParamsSchema,
   auditSymmetryParamsSchema,
+  radialArrayCubesParamsSchema,
+  duplicateHierarchyParamsSchema,
+  transformUvIslandsParamsSchema,
+  auditMaterialSetParamsSchema,
+  ensureMaterialSetParamsSchema,
+  inspectAnimationParamsSchema,
+  transformAnimationKeysParamsSchema,
+  analyzeViewSilhouetteParamsSchema,
   upsertAnimationParamsSchema,
   resolveGuide,
   scaffoldBipedParamsSchema,
@@ -53,7 +62,7 @@ function collectTsFiles(dir: string, out: string[] = []): string[] {
     const p = join(dir, name);
     const st = statSync(p);
     if (st.isDirectory()) collectTsFiles(p, out);
-    else if (name.endsWith(".ts")) out.push(p);
+    else if (name.endsWith(".ts") && !name.endsWith(".test.ts")) out.push(p);
   }
   return out;
 }
@@ -101,6 +110,19 @@ describe("capture_views contract", () => {
     assert.throws(() =>
       captureViewsParamsSchema.parse({ views: ["iso"], extra: true }),
     );
+  });
+});
+
+describe("model audit contract", () => {
+  it("allows explicit intentional UV sharing without globally hiding overlaps", () => {
+    checkModelParamsSchema.parse({
+      allowed_uv_overlaps: [
+        {
+          a: { cube: "arm_left", face: "north" },
+          b: { cube: "arm_right", face: "north" },
+        },
+      ],
+    });
   });
 });
 
@@ -367,6 +389,43 @@ describe("iterative modeling schemas", () => {
       }),
     );
   });
+
+  it("supports bounded radial arrays, hierarchy copies, and UV island transforms", () => {
+    radialArrayCubesParamsSchema.parse({
+      sources: ["spoke"],
+      count: 12,
+      axis: "y",
+      pivot: [0, 8, 0],
+      rotate_cubes: true,
+      uv_policy: "share",
+    });
+    duplicateHierarchyParamsSchema.parse({
+      root: "arm_left",
+      name_suffix: "_variant",
+      translate: [8, 0, 0],
+      uv_policy: "auto",
+    });
+    transformUvIslandsParamsSchema.parse({
+      faces: [{ cube: "head", face: "north" }],
+      translate: [8, 0],
+      rotate: "90",
+    });
+  });
+
+  it("rejects unbounded advanced geometry and no-op UV transforms", () => {
+    assert.throws(() =>
+      radialArrayCubesParamsSchema.parse({
+        sources: ["spoke"],
+        count: 129,
+        pivot: [0, 0, 0],
+      }),
+    );
+    assert.throws(() =>
+      transformUvIslandsParamsSchema.parse({
+        faces: [{ cube: "head", face: "north" }],
+      }),
+    );
+  });
 });
 
 describe("animation schema", () => {
@@ -382,6 +441,44 @@ describe("animation schema", () => {
           ],
         },
       },
+    });
+  });
+
+  it("supports exact animation inspection and bounded key transforms", () => {
+    inspectAnimationParamsSchema.parse({ name: "animation.test.idle" });
+    transformAnimationKeysParamsSchema.parse({
+      name: "animation.test.idle",
+      bones: ["arm_left", "arm_right"],
+      time_scale: 1.25,
+      mirror_axis: "x",
+    });
+    assert.throws(() =>
+      transformAnimationKeysParamsSchema.parse({ name: "animation.test.idle" }),
+    );
+  });
+});
+
+describe("visual and material QA schemas", () => {
+  it("supports silhouette metrics and multi-channel material audits", () => {
+    analyzeViewSilhouetteParamsSchema.parse({
+      views: ["iso", "north"],
+      max_edge: 128,
+      alpha_threshold: 8,
+    });
+    auditMaterialSetParamsSchema.parse({
+      channels: {
+        base: "creature_base",
+        emissive: "creature_emissive",
+        normal: "creature_normal",
+      },
+      require_power_of_two: true,
+      naming_prefix: "creature_",
+    });
+    ensureMaterialSetParamsSchema.parse({
+      prefix: "creature",
+      width: 64,
+      height: 64,
+      channels: ["base", "emissive", "normal", "specular"],
     });
   });
 });

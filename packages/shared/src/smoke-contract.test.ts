@@ -33,6 +33,7 @@ describe("generation smoke contract", () => {
       "paint_pixel_batch",
       "get_texture",
       "capture_views",
+      "analyze_view_silhouette",
     ] as const;
     for (const name of pipeline) {
       assert.equal(isCommandName(name), true, name);
@@ -43,6 +44,13 @@ describe("generation smoke contract", () => {
     assert.ok(COMMAND_NAMES.includes("auto_uv_cubes"));
     assert.ok(COMMAND_NAMES.includes("transform_elements"));
     assert.ok(COMMAND_NAMES.includes("array_cubes"));
+    assert.ok(COMMAND_NAMES.includes("radial_array_cubes"));
+    assert.ok(COMMAND_NAMES.includes("duplicate_hierarchy"));
+    assert.ok(COMMAND_NAMES.includes("transform_uv_islands"));
+    assert.ok(COMMAND_NAMES.includes("audit_material_set"));
+    assert.ok(COMMAND_NAMES.includes("ensure_material_set"));
+    assert.ok(COMMAND_NAMES.includes("inspect_animation"));
+    assert.ok(COMMAND_NAMES.includes("transform_animation_keys"));
     assert.ok(COMMAND_NAMES.includes("audit_symmetry"));
     assert.ok(COMMAND_NAMES.includes("resize_texture"));
     assert.ok(COMMAND_NAMES.includes("edit_texture_pixels"));

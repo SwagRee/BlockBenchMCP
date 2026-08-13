@@ -3,6 +3,7 @@ import {
   applyGeometryBatchParamsSchema,
   captureViewsParamsSchema,
   checkModelResultSchema,
+  checkModelParamsSchema,
   createLimbParamsSchema,
   createProjectParamsSchema,
   paintFaceFeatureParamsSchema,
@@ -50,6 +51,16 @@ import {
   measureModelParamsSchema,
   auditSymmetryParamsSchema,
 } from "./contracts-management.js";
+import {
+  analyzeViewSilhouetteParamsSchema,
+  auditMaterialSetParamsSchema,
+  ensureMaterialSetParamsSchema,
+  duplicateHierarchyParamsSchema,
+  inspectAnimationParamsSchema,
+  radialArrayCubesParamsSchema,
+  transformAnimationKeysParamsSchema,
+  transformUvIslandsParamsSchema,
+} from "./contracts-advanced.js";
 
 export interface CommandSpec<P extends z.ZodType = z.ZodType> {
   description: string;
@@ -63,7 +74,7 @@ export const COMMAND_SPECS = {
     description:
       "List model formats currently registered in Blockbench, including plugin formats.",
     mutates: false,
-    params: z.object({}).strict(),
+    params: checkModelParamsSchema,
   },
   get_project_summary: {
     description:
@@ -89,6 +100,12 @@ export const COMMAND_SPECS = {
       "Compare explicit left/right cube or group pairs across an axis and report coordinate error.",
     mutates: false,
     params: auditSymmetryParamsSchema,
+  },
+  analyze_view_silhouette: {
+    description:
+      "Capture views and return deterministic silhouette bounds, coverage, and preview images for visual QA.",
+    mutates: false,
+    params: analyzeViewSilhouetteParamsSchema,
   },
   list_textures: {
     description:
@@ -168,6 +185,18 @@ export const COMMAND_SPECS = {
     mutates: true,
     params: arrayCubesParamsSchema,
   },
+  radial_array_cubes: {
+    description:
+      "Create a bounded radial array of cubes around a pivot with shared or regenerated UVs.",
+    mutates: true,
+    params: radialArrayCubesParamsSchema,
+  },
+  duplicate_hierarchy: {
+    description:
+      "Deep-copy one group subtree while preserving hierarchy, cube properties, and explicit UV policy.",
+    mutates: true,
+    params: duplicateHierarchyParamsSchema,
+  },
   create_limb: {
     description:
       "Bone+cube with pivot at joint. Optional X mirror (arm_left/arm_right). Prefer for characters.",
@@ -239,6 +268,12 @@ export const COMMAND_SPECS = {
       "Set exact per-face UV rectangles and optional quarter-turn rotation for multiple cube faces in ONE undo.",
     mutates: true,
     params: setFaceUvParamsSchema,
+  },
+  transform_uv_islands: {
+    description:
+      "Translate, scale, or quarter-turn selected UV faces around a shared pivot in one undo.",
+    mutates: true,
+    params: transformUvIslandsParamsSchema,
   },
   pack_box_uv: {
     description:
@@ -341,11 +376,35 @@ export const COMMAND_SPECS = {
     mutates: true,
     params: assignTextureParamsSchema,
   },
+  audit_material_set: {
+    description:
+      "Validate base/emissive/normal/specular texture channel dimensions, power-of-two sizes, and naming.",
+    mutates: false,
+    params: auditMaterialSetParamsSchema,
+  },
+  ensure_material_set: {
+    description:
+      "Create or reuse a bounded base/emissive/normal/specular texture set with channel-appropriate fills.",
+    mutates: true,
+    params: ensureMaterialSetParamsSchema,
+  },
+  inspect_animation: {
+    description:
+      "Read exact bone animation channels, key times, and vector values for safe iterative editing.",
+    mutates: false,
+    params: inspectAnimationParamsSchema,
+  },
   upsert_animation: {
     description:
       "Create/replace a real bone animation clip with rotation/position/scale keys and linear/catmullrom/step interpolation.",
     mutates: true,
     params: upsertAnimationParamsSchema,
+  },
+  transform_animation_keys: {
+    description:
+      "Retiming, value scaling, and axis-aware mirroring for bounded animation bone keyframes in one undo.",
+    mutates: true,
+    params: transformAnimationKeysParamsSchema,
   },
   delete_animation: {
     description: "Delete one animation by name in a single undo step.",

@@ -20,6 +20,7 @@ export {
   projectSummarySchema,
   checkFindingSchema,
   checkModelResultSchema,
+  checkModelParamsSchema,
   captureViewsParamsSchema,
   captureViewsDefaults,
   captureViewMetaSchema,
@@ -87,6 +88,17 @@ export {
   auditSymmetryParamsSchema,
 } from "./contracts-management.js";
 
+export {
+  radialArrayCubesParamsSchema,
+  duplicateHierarchyParamsSchema,
+  transformUvIslandsParamsSchema,
+  auditMaterialSetParamsSchema,
+  ensureMaterialSetParamsSchema,
+  inspectAnimationParamsSchema,
+  transformAnimationKeysParamsSchema,
+  analyzeViewSilhouetteParamsSchema,
+} from "./contracts-advanced.js";
+
 export { resolveGuide } from "./guide-resolve.js";
 export type { GuideTopic } from "./guide-resolve.js";
 export {
@@ -112,4 +124,4 @@ export type { CapabilityId } from "./capabilities.js";
 export { UV_MODES, uvModeSchema, resolveUvModeFromHints } from "./uv-mode.js";
 export type { UvMode } from "./uv-mode.js";
 
-export const PLUGIN_VERSION = "0.5.0";
+export const PLUGIN_VERSION = "0.6.0";

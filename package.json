@@ -1,7 +1,7 @@
 {
   "name": "blockbench-mcp",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Minecraft-oriented BlockBench MCP — pure desktop plugin (in-process HTTP MCP)",
   "type": "module",
   "workspaces": [
@@ -10,7 +10,8 @@
   "scripts": {
     "build": "npm run build -w @blockbench-mcp/shared && npm run build -w @blockbench-mcp/plugin",
     "typecheck": "npm run build -w @blockbench-mcp/shared && npm run typecheck -w @blockbench-mcp/plugin",
-    "test": "npm run test -w @blockbench-mcp/shared"
+    "test": "npm run test -w @blockbench-mcp/shared",
+    "test:e2e": "python skills/blockbench-pixel-art/openai/scripts/e2e_smoke.py --confirm-disposable"
   },
   "engines": {
     "node": ">=22"

@@ -105,26 +105,41 @@ function intersects(a: UvIsland, b: UvIsland): boolean {
 export function getUvLayout(opts: {
   cubes?: string[];
   include_overlaps?: boolean;
+  allowed_overlaps?: Array<{
+    cube_a: string;
+    a: FaceName;
+    cube_b: string;
+    b: FaceName;
+  }>;
 }): {
   texture_size: [number, number];
   islands: UvIsland[];
-  overlaps: Array<{ a: string; b: string }>;
+  overlaps: Array<{ a: string; b: string; intentional: boolean }>;
   summary: {
     islands: number;
     out_of_bounds: number;
     overlaps: number;
+    unintended_overlaps: number;
     used: [number, number, number, number];
   };
 } {
   const islands = collectUvIslands(opts.cubes);
-  const overlaps: Array<{ a: string; b: string }> = [];
+  const allowed = new Set(
+    (opts.allowed_overlaps ?? []).map(({ cube_a, a, cube_b, b }) =>
+      [`${cube_a}.${a}`, `${cube_b}.${b}`].sort().join("|"),
+    ),
+  );
+  const overlaps: Array<{ a: string; b: string; intentional: boolean }> = [];
   if (opts.include_overlaps !== false) {
     for (let i = 0; i < islands.length; i += 1) {
       for (let j = i + 1; j < islands.length; j += 1) {
         if (!intersects(islands[i], islands[j])) continue;
+        const a = `${islands[i].cube}.${islands[i].face}`;
+        const b = `${islands[j].cube}.${islands[j].face}`;
         overlaps.push({
-          a: `${islands[i].cube}.${islands[i].face}`,
-          b: `${islands[j].cube}.${islands[j].face}`,
+          a,
+          b,
+          intentional: allowed.has([a, b].sort().join("|")),
         });
       }
     }
@@ -145,6 +160,8 @@ export function getUvLayout(opts: {
       islands: islands.length,
       out_of_bounds: islands.filter((island) => island.out_of_bounds).length,
       overlaps: overlaps.length,
+      unintended_overlaps: overlaps.filter((overlap) => !overlap.intentional)
+        .length,
       used,
     },
   };

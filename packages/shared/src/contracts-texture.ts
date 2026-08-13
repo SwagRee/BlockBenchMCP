@@ -27,6 +27,20 @@ export const getUvLayoutParamsSchema = z
     cubes: z.array(z.string().min(1)).max(256).optional(),
     /** Include pairwise overlap records (default true). */
     include_overlaps: z.boolean().optional(),
+    /** Explicit face pairs whose shared texels are intentional. */
+    allowed_overlaps: z
+      .array(
+        z
+          .object({
+            a: faceEnum,
+            b: faceEnum,
+            cube_a: z.string().min(1),
+            cube_b: z.string().min(1),
+          })
+          .strict(),
+      )
+      .max(256)
+      .optional(),
   })
   .strict();
 

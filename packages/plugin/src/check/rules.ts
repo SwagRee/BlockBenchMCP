@@ -1,9 +1,23 @@
 import type { CheckModelResult } from "@blockbench-mcp/shared";
 import { requireProject } from "../bb/elements.js";
-import { center, cubeAabb, dist, overlaps, volume } from "./aabb.js";
+import { center, dist, overlaps, volume } from "./aabb.js";
 import { getUvLayout } from "../paint/uv-layout.js";
+import { cubeWorldBounds, geometricCubeVolume } from "../geometry/spatial.js";
 
-export function runCheckModel(): CheckModelResult {
+export function runCheckModel(
+  opts: {
+    allowed_uv_overlaps?: Array<{
+      a: {
+        cube: string;
+        face: "north" | "south" | "east" | "west" | "up" | "down";
+      };
+      b: {
+        cube: string;
+        face: "north" | "south" | "east" | "west" | "up" | "down";
+      };
+    }>;
+  } = {},
+): CheckModelResult {
   requireProject();
   const findings: CheckModelResult["findings"] = [];
 
@@ -19,9 +33,9 @@ export function runCheckModel(): CheckModelResult {
     }
   }
 
-  const aabbs = Cube.all.map((c) => ({ cube: c, box: cubeAabb(c) }));
+  const aabbs = Cube.all.map((c) => ({ cube: c, box: cubeWorldBounds(c) }));
   for (const { cube, box } of aabbs) {
-    if (volume(box) <= 0) {
+    if (geometricCubeVolume(cube) <= 0) {
       findings.push({
         severity: "error",
         code: "ZERO_VOLUME",
@@ -123,16 +137,25 @@ export function runCheckModel(): CheckModelResult {
     }
   }
 
-  const uvLayout = getUvLayout({ include_overlaps: true });
-  if (uvLayout.summary.overlaps > 0) {
-    const examples = uvLayout.overlaps
+  const uvLayout = getUvLayout({
+    include_overlaps: true,
+    allowed_overlaps: opts.allowed_uv_overlaps?.map(({ a, b }) => ({
+      cube_a: a.cube,
+      a: a.face,
+      cube_b: b.cube,
+      b: b.face,
+    })),
+  });
+  if (uvLayout.summary.unintended_overlaps > 0) {
+    const unintended = uvLayout.overlaps.filter((pair) => !pair.intentional);
+    const examples = unintended
       .slice(0, 3)
       .map((pair) => `${pair.a}↔${pair.b}`)
       .join(", ");
     findings.push({
       severity: "warn",
       code: "UV_OVERLAP",
-      message: `${uvLayout.summary.overlaps} overlapping UV face pair(s) detected${examples ? `: ${examples}` : ""}. Review get_uv_layout before painting.`,
+      message: `${unintended.length} unintended overlapping UV face pair(s) detected${examples ? `: ${examples}` : ""}. Review get_uv_layout before painting.`,
     });
   }
 
